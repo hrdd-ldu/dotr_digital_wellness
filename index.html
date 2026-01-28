@@ -1,0 +1,1156 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digitalization and Psychological Well-Being Course</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/confetti-js@0.0.18/dist/index.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --primary: #003d82; /* DOTr Blue */
+      --secondary: #d32f2f; /* Accent Red */
+      --accent: #d4af37; /* Gold */
+      --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+
+    body { font-family: 'Poppins', sans-serif; background: var(--bg-gradient); min-height: 100%; margin: 0; }
+
+    /* Layout */
+    .app-container { width: 100%; min-height: 100%; padding: 1rem; }
+    .course-wrapper { max-width: 1200px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1); overflow: hidden; display: flex; flex-direction: column; min-height: 90vh; }
+
+    /* Header */
+    .header { background: linear-gradient(to right, #003d82, #0056b3); color: white; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; }
+    .logo { width: 70px; height: 70px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+
+    /* Tabs */
+    .nav-tabs { background: #fff; border-bottom: 1px solid #e5e7eb; display: flex; overflow-x: auto; padding: 0 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+    .nav-tab { padding: 1rem 1.5rem; color: #6b7280; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.3s; white-space: nowrap; display: flex; align-items: center; gap: 0.5rem; }
+    .nav-tab:hover { color: var(--primary); background-color: #f9fafb; }
+    .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .nav-tab.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; filter: grayscale(1); }
+    .status-badge { font-size: 0.7rem; background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 10px; margin-left: 5px; }
+
+    /* Content */
+    .main-content { flex: 1; padding: 2rem; overflow-y: auto; background: #f8fafc; }
+    .section { display: none; animation: fadeIn 0.4s ease-out; }
+    .section.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Components */
+    .btn { background: linear-gradient(135deg, #003d82 0%, #0056b3 100%); color: white; padding: 0.75rem 1.5rem; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; background: #9ca3af; }
+    .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 61, 130, 0.4); }
+    .form-label { display: block; font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.25rem; }
+    .form-input { width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; outline: none; transition: border 0.2s; }
+    .form-input:focus { border-color: var(--primary); ring: 2px solid var(--primary); }
+
+    /* UPDATED Video Styles */
+    .video-wrapper { 
+        position: relative; 
+        width: 100%; 
+        background: #000; 
+        border-radius: 15px; 
+        overflow: hidden; 
+        margin-bottom: 1rem; 
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2); 
+    }
+    /* We remove the padding-bottom hack since standard <video> tags handle aspect ratio naturally */
+    .local-video {
+        width: 100%;
+        max-height: 500px;
+        display: block;
+    }
+    
+    .timer-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; margin-bottom: 1rem; }
+    .timer-fill { height: 100%; background: #10b981; width: 0%; transition: width 0.2s linear; }
+
+    /* Activity 1: Matching Game */
+    .matching-game-container { display: flex; justify-content: space-between; gap: 20px; max-width: 800px; margin: 0 auto; flex-wrap: wrap; }
+    .column { flex: 1; display: flex; flex-direction: column; gap: 15px; }
+    .match-card {
+        background: white; padding: 15px; border-radius: 10px; border: 2px solid #e5e7eb; cursor: pointer;
+        text-align: center; transition: all 0.3s; font-weight: 600; color: #374151; position: relative;
+    }
+    .match-card:hover { border-color: var(--primary); background: #f0f9ff; }
+    .match-card.selected { border-color: var(--accent); background: #fffbeb; box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
+    .match-card.matched { border-color: #9ca3af; background: #f3f4f6; color: #9ca3af; cursor: default; } 
+    .match-card.correct-reveal { border-color: #10b981; background: #d1fae5; color: #065f46; } 
+    
+    /* Activity 2: Plan */
+    .tracker-container { background: white; padding: 2rem; border-radius: 15px; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); }
+    .time-input-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; text-align: center; transition: all 0.2s; }
+    .time-input-card:hover { border-color: var(--primary); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .time-input { width: 100%; background: transparent; font-size: 2rem; font-weight: bold; color: var(--primary); text-align: center; border: none; outline: none; }
+    .intervention-card { background: white; padding: 1.5rem; border-radius: 16px; border: 2px solid #f3f4f6; cursor: pointer; transition: all 0.3s; text-align: center; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    .intervention-card:hover { border-color: #1e3c72; transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+    .intervention-card.selected { border-color: #1e3c72; background: #eff6ff; }
+    .intervention-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+    .plan-detail-card { background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%); border-left: 5px solid #1e3c72; padding: 2rem; margin-bottom: 1rem; border-radius: 0 12px 12px 0; box-shadow: 0 4px 10px rgba(0,0,0,0.05); animation: slideUp 0.5s forwards; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* --- CERTIFICATE STYLES (Locked to A4 Landscape) --- */
+    @page { size: A4 landscape; margin: 0; }
+    
+    .certificate-wrapper {
+        width: 1123px;
+        height: 794px;
+        min-width: 1123px;
+        min-height: 794px;
+        position: relative;
+        background: #ffffff;
+        box-shadow: 0 25px 80px rgba(0,0,0,0.2);
+        margin: 0 auto;
+        overflow: hidden;
+        flex-shrink: 0; 
+    }
+
+    #cert-element-container {
+        width: 100%; 
+        overflow-x: auto; 
+        padding: 40px; 
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        background: #f1f5f9; 
+        border-radius: 12px;
+        margin-bottom: 2rem;
+    }
+
+    /* --- CHATBOT STYLES --- */
+    #ai-fab {
+        position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
+        background: var(--primary); color: white; border-radius: 50%;
+        display: flex; justify-content: center; align-items: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; z-index: 9000;
+        transition: transform 0.3s;
+    }
+    #ai-fab:hover { transform: scale(1.1); }
+    
+    #ai-chat-window {
+        position: fixed; bottom: 100px; right: 30px; width: 350px; height: 500px;
+        background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        display: none; flex-direction: column; z-index: 9000; overflow: hidden;
+        border: 1px solid #ddd;
+    }
+    .chat-header { background: var(--primary); color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+    .chat-body { flex: 1; padding: 15px; overflow-y: auto; background: #f9fafb; display: flex; flex-direction: column; gap: 10px; }
+    .chat-msg { padding: 10px 15px; border-radius: 12px; font-size: 0.85rem; max-width: 90%; line-height: 1.5; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .bot-msg { background: white; color: #374151; align-self: flex-start; border: 1px solid #e5e7eb; }
+    .user-msg { background: var(--primary); color: white; align-self: flex-end; }
+    .chat-btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px; }
+    .chat-btn { font-size: 0.75rem; padding: 8px; border: 1px solid var(--primary); color: var(--primary); border-radius: 8px; background: white; cursor: pointer; transition: all 0.2s; text-align: center; }
+    .chat-btn:hover { background: var(--primary); color: white; }
+
+    /* --- ADMIN STYLES --- */
+    #admin-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f3f4f6; z-index: 10000; overflow-y: auto; display: none; }
+    #admin-page.active { display: block; }
+    .stat-card { background: white; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center; }
+    .stat-val { font-size: 2rem; font-weight: 800; color: var(--primary); }
+    .stat-label { color: #64748b; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    .admin-table-container { background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow-x: auto; margin-top: 20px; }
+    .data-table { width: 100%; border-collapse: collapse; white-space: nowrap; font-size: 13px; }
+    .data-table th, .data-table td { padding: 12px 16px; border-bottom: 1px solid #eee; text-align: left; }
+    .data-table th { background: var(--primary); color: white; position: sticky; top: 0; }
+    .data-table tr:hover { background-color: #f8fafc; }
+
+    /* Admin Login Modal */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 20000; display: none; align-items: center; justify-content: center; }
+    .modal-box { background: white; padding: 2rem; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; }
+    .hidden { display: none; }
+  </style>
+ </head>
+ <body>
+  
+  <div class="app-container" id="main-app">
+    <div class="course-wrapper relative">
+      
+      <div class="header">
+        <div class="header-content flex items-center gap-4">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Department_of_Transportation_%28Philippines%29.svg/2048px-Department_of_Transportation_%28Philippines%29.svg.png" alt="DOTr" class="logo">
+          <div class="text-left hidden md:block">
+            <h1 class="text-lg md:text-xl font-bold m-0">DOTr Digital Well-Being</h1>
+            <p class="text-xs md:text-sm opacity-90 m-0">Department of Transportation</p>
+          </div>
+        </div>
+        <div id="user-controls" class="hidden flex items-center gap-2">
+          <span class="text-sm font-semibold hidden md:inline mr-2 text-white/90">👤 <span id="display-name">User</span></span>
+          <button onclick="showAdminLogin()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition font-bold"><i class="fas fa-lock"></i> Admin</button>
+          <button onclick="handleLogout()" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-sm transition border border-white text-white">Logout</button>
+        </div>
+      </div>
+
+      <div id="main-nav" class="nav-tabs hidden">
+        <div class="nav-tab active" id="tab-intro" onclick="switchTab('intro')">🏠 Introduksyon</div>
+        <div class="nav-tab disabled" id="tab-pretest" onclick="switchTab('pretest')">📝 Pre-Test <span id="badge-pretest" class="status-badge hidden"></span></div>
+        <div class="nav-tab disabled" id="tab-module1" onclick="switchTab('module1')">📺 Bahagi 1</div>
+        <div class="nav-tab disabled" id="tab-activity1" onclick="switchTab('activity1')">🧩 Activity 1 <span id="badge-act1" class="status-badge hidden"></span></div>
+        <div class="nav-tab disabled" id="tab-module2" onclick="switchTab('module2')">📺 Bahagi 2</div>
+        <div class="nav-tab disabled" id="tab-activity2" onclick="switchTab('activity2')">📊 Plan <span id="badge-act2" class="status-badge hidden"></span></div>
+        <div class="nav-tab disabled" id="tab-posttest" onclick="switchTab('posttest')">🎓 Post-Test <span id="badge-posttest" class="status-badge hidden"></span></div>
+        <div class="nav-tab disabled" id="tab-eval" onclick="switchTab('eval')">📋 Ebalwasyon</div>
+        <div class="nav-tab disabled" id="tab-cert" onclick="switchTab('cert')">🏆 Sertipiko</div>
+      </div>
+
+      <div class="main-content relative">
+        <div id="login-section" class="section active max-w-md mx-auto">
+            <div class="bg-white p-8 rounded-2xl shadow-lg text-center mt-10">
+                <h2 class="text-2xl font-bold text-[#003d82] mb-2">Mag-login</h2>
+                <p class="text-gray-500 mb-6">Ipasok ang email upang magsimula.</p>
+                <form onsubmit="handleLogin(event)" class="text-left">
+                    <div class="mb-4">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" id="login-email" class="form-input" placeholder="email@dotr.gov.ph" required>
+                    </div>
+                    <button type="submit" id="login-submit-btn" class="btn w-full">Pumasok</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="attendance-section" class="section max-w-2xl mx-auto">
+            <div class="bg-white p-8 rounded-2xl shadow-lg">
+              <h2 class="text-2xl font-bold text-[#003d82] mb-2 text-center">Attendance Form</h2>
+              <p class="text-gray-500 mb-6 text-center">Bago ang iyong account. Mag-register para sa sertipiko.</p>
+              <form id="attendance-form" class="space-y-4" onsubmit="handleAttendance(event)">
+                <div class="mb-4">
+                  <label class="form-label">Training/Course Title</label>
+                  <input type="text" class="form-input bg-gray-100" value="Digitalization and Psychological Well-Being" readonly>
+                </div>
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div>
+                      <label class="form-label">Full Name</label>
+                      <input type="text" id="reg-name" class="form-input" placeholder="JUAN A. DELA CRUZ" required>
+                      <p class="text-xs text-gray-500 mt-1">Format: FIRST NAME, MIDDLE INITIAL, LAST NAME. Ito ang lalabas sa Certificate.</p>
+                  </div>
+                  <div><label class="form-label">Email Address</label><input type="email" id="reg-email" class="form-input" disabled></div>
+                </div>
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div>
+                      <label class="form-label">Gender</label>
+                      <select id="reg-gender" class="form-input" required>
+                          <option value="">Select...</option>
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Non-binary">Non-binary</option>
+                          <option value="Prefer not to say">Prefer not to say</option>
+                      </select>
+                  </div>
+                  <div>
+                      <label class="form-label">Type of Employment</label>
+                      <select id="reg-employment" class="form-input" required>
+                          <option value="">Select...</option>
+                          <option value="Permanent">Permanent</option>
+                          <option value="Co-terminus">Co-terminus</option>
+                          <option value="Contractual">Contractual</option>
+                          <option value="Contract of Service">Contract of Service</option>
+                          <option value="Job Order">Job Order</option>
+                      </select>
+                  </div>
+                </div>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div><label class="form-label">Position</label><input type="text" id="reg-position" class="form-input" required></div>
+                    <div><label class="form-label">Office/Division</label><input type="text" id="reg-office" class="form-input" required></div>
+                </div>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div><label class="form-label">Complete ID Number</label><input type="text" id="reg-id" class="form-input" required></div>
+                    <div><label class="form-label">Mobile Number</label><input type="tel" id="reg-mobile" class="form-input" required></div>
+                </div>
+                <button type="submit" id="attendance-submit-btn" class="btn w-full mt-4">Simulan ang Training</button>
+              </form>
+            </div>
+        </div>
+
+        <div id="intro" class="section">
+             <div class="max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold text-[#003d82] mb-6 text-center">Introduksyon</h2>
+                <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-gray-700 leading-relaxed text-justify space-y-4">
+                  <p>Sa mabilis na pag-unlad ng ating teknolohiya, hindi maitatanggi na tayo ay nasa isang natatanging yugto ng kasaysayan—ang digital age. Mula sa paglaganap ng social media hanggang sa pagsibol ng digitalisasyon, ang lahat ay tila abot-kamay na natin sa isang pindot lamang. Ngunit sa likod ng mga modernong kaginhawaang ito, nararapat nating suriin: <strong>Sapat pa ba ang pangangalaga natin sa ating kalusugang mental?</strong></p>
+                  <p>Sa loob ng gawaing ito, tatalakayin natin ang mahahalagang aspeto ng ating kapakanan sa gitna ng teknolohiya:</p>
+                  <ul class="list-disc pl-8 space-y-2 text-[#003d82]">
+                    <li><strong>Modernong Interbensyon:</strong> Online counseling at virtual reality (VR) therapy.</li>
+                    <li><strong>Impluwensya ng Digital Consumption:</strong> Epekto ng screen time at blue light.</li>
+                    <li><strong>Sosyal na Implikasyon:</strong> Social media comparison at information overload.</li>
+                    <li><strong>Kalinangan sa Trabaho:</strong> Work-life balance policies.</li>
+                  </ul>
+                  <p>Gabay natin si Sir Jose Mari "Jomar" Hulleza. Handa na ba kayo? Muli, welcome sa ating training!</p>
+                </div>
+                <div class="text-center mt-8"><button onclick="unlockAndSwitch('pretest')" class="btn text-lg px-8">Magsimula sa Pre-Test ➔</button></div>
+              </div>
+        </div>
+
+        <div id="pretest" class="section">
+           <h2 class="text-2xl font-bold text-[#003d82] mb-4 text-center">Paunang Pagsusulit</h2>
+           <div class="max-w-4xl mx-auto space-y-8">
+               <h3 class="font-bold text-lg text-gray-600 border-b pb-2">Part 1: Multiple Choice</h3>
+               <div id="pretest-part1" class="space-y-6"></div>
+               <h3 class="font-bold text-lg text-gray-600 border-b pb-2 pt-4">Part 2: Tama o Mali</h3>
+               <div id="pretest-part2" class="space-y-6"></div>
+           </div>
+           <div class="text-center mt-8"><button onclick="submitPreTest()" id="btn-submit-pretest" class="btn">Isumite ang Pre-Test</button></div>
+        </div>
+
+        <div id="module1" class="section">
+            <div class="max-w-4xl mx-auto">
+              <h2 class="text-2xl font-bold text-[#003d82] mb-2">Module 1: Pag-unawa sa Epekto ng Digital</h2>
+              <div class="bg-yellow-50 border border-yellow-200 p-3 rounded mb-4 text-sm text-yellow-800">
+                <i class="fas fa-info-circle mr-2"></i><strong>Note:</strong> Video tracking is enabled. You cannot skip or fast-forward.
+              </div>
+              <div class="video-wrapper">
+                <video id="vid-1" class="local-video" controls controlsList="nodownload noplaybackrate" disablePictureInPicture>
+                    <source src="assets/module1.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+              </div>
+              <div class="timer-bar"><div id="timer-fill-1" class="timer-fill"></div></div>
+              <div class="text-right"><button id="btn-to-act1" class="btn opacity-50 cursor-not-allowed" disabled onclick="unlockAndSwitch('activity1')">Pumunta sa Activity 1 <i class="fas fa-lock ml-2"></i></button></div>
+            </div>
+        </div>
+
+        <div id="activity1" class="section">
+            <div class="max-w-4xl mx-auto text-center">
+                <h2 class="text-2xl font-bold text-[#003d82] mb-4">Interactive Activity: Digital Match</h2>
+                <div class="matching-game-container mb-8">
+                    <div class="column" id="match-col-a"></div>
+                    <div class="column" id="match-col-b"></div>
+                </div>
+                <button onclick="checkAllMatches()" class="btn mb-4">Check Answers</button>
+                <div id="match-feedback" class="h-6 font-bold text-[#003d82] mb-4"></div>
+                <div id="ref1-form" class="hidden bg-white p-6 rounded-xl shadow border-t-4 border-[#003d82] text-left">
+                    <h3 class="font-bold text-lg mb-4 text-[#003d82]">💭 Repleksyon (Part 1)</h3>
+                    <div class="space-y-4">
+                        <label class="form-label">1. Sa gitna ng mundong tila hindi humihinto sa pag-scroll, gaano kahirap o kadali para sa iyo ang magpatupad ng disiplina sa paggamit ng digital devices?</label>
+                        <textarea id="ref1-q1" class="w-full border p-2 rounded h-24" placeholder="Sagot..."></textarea>
+                        <label class="form-label">2. Ano ang iyong pananaw sa epekto ng teknolohiya sa ating relasyon sa kapwa?</label>
+                        <textarea id="ref1-q2" class="w-full border p-2 rounded h-24" placeholder="Sagot..."></textarea>
+                        <button onclick="submitReflection(1)" id="btn-ref1" class="btn w-full">Isumite at Ituloy</button>
+                        <div id="ref1-feedback" class="text-sm font-semibold mt-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="module2" class="section">
+            <div class="max-w-4xl mx-auto">
+              <h2 class="text-2xl font-bold text-[#003d82] mb-2">Module 2: Pagbuo ng Digital Wellness</h2>
+               <div class="bg-yellow-50 border border-yellow-200 p-3 rounded mb-4 text-sm text-yellow-800">
+                <i class="fas fa-info-circle mr-2"></i><strong>Note:</strong> Video tracking is enabled. You cannot skip or fast-forward.
+              </div>
+              <div class="video-wrapper">
+                <video id="vid-2" class="local-video" controls controlsList="nodownload noplaybackrate" disablePictureInPicture>
+                    <source src="assets/module2.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+              </div>
+              <div class="timer-bar"><div id="timer-fill-2" class="timer-fill"></div></div>
+              <div class="text-right"><button id="btn-to-act2" class="btn opacity-50 cursor-not-allowed" disabled onclick="unlockAndSwitch('activity2')">Pumunta sa Activity 2 <i class="fas fa-lock ml-2"></i></button></div>
+            </div>
+        </div>
+
+        <div id="activity2" class="section">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-2xl font-bold text-[#003d82] mb-4 text-center">Your Digital Intervention Plan</h2>
+                <div id="step-calc" class="tracker-container text-center">
+                    <h3 class="font-bold mb-6 text-gray-600 text-lg">Step 1: Screen Time Calculator (Oras kada araw)</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div class="time-input-card"><i class="fab fa-facebook text-2xl text-blue-600 mb-2"></i><input type="number" id="st-social" class="time-input" placeholder="0" oninput="calcTotal()"></div>
+                        <div class="time-input-card"><i class="fas fa-briefcase text-2xl text-gray-600 mb-2"></i><input type="number" id="st-work" class="time-input" placeholder="0" oninput="calcTotal()"></div>
+                        <div class="time-input-card"><i class="fas fa-gamepad text-2xl text-purple-600 mb-2"></i><input type="number" id="st-game" class="time-input" placeholder="0" oninput="calcTotal()"></div>
+                        <div class="time-input-card"><i class="fas fa-tv text-2xl text-red-600 mb-2"></i><input type="number" id="st-stream" class="time-input" placeholder="0" oninput="calcTotal()"></div>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-xl mb-6 inline-block w-full md:w-1/2">
+                        <p class="text-gray-600 font-semibold">Total Daily Screen Time</p>
+                        <div id="st-total" class="text-4xl font-bold text-[#003d82]">0</div>
+                        <p class="text-sm text-gray-500">Hours</p>
+                    </div>
+                    <div><button onclick="document.getElementById('step-calc').classList.add('hidden'); document.getElementById('step-select').classList.remove('hidden');" class="btn">Next: Choose Strategy</button></div>
+                </div>
+
+                <div id="step-select" class="hidden">
+                    <h3 class="font-bold text-center mb-6 text-gray-600 text-lg">Step 2: Choose Your Strategy</h3>
+                    <div class="grid md:grid-cols-2 gap-4 mb-6">
+                        <div class="intervention-card" onclick="selPlan(this, 'Gradual')"><div class="intervention-icon">🌱</div><div class="font-bold">Unti-unting Pagbawas</div></div>
+                        <div class="intervention-card" onclick="selPlan(this, 'Detox')"><div class="intervention-icon">🛑</div><div class="font-bold">Digital Detox</div></div>
+                        <div class="intervention-card" onclick="selPlan(this, 'Replacement')"><div class="intervention-icon">🏃</div><div class="font-bold">Pagpapalit Gawain</div></div>
+                        <div class="intervention-card" onclick="selPlan(this, 'Mindful')"><div class="intervention-icon">🧘</div><div class="font-bold">Mindful na Paggamit</div></div>
+                    </div>
+                </div>
+
+                <div id="step-result" class="hidden">
+                    <div class="plan-detail-card">
+                        <h3 class="font-bold text-lg text-[#003d82] mb-4">✅ Ang Iyong Plano: <span id="plan-name"></span></h3>
+                        <ul id="plan-list" class="space-y-3 text-sm text-gray-700 list-disc pl-5"></ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow border-t-4 border-[#003d82] text-left mt-6">
+                        <h3 class="font-bold text-lg mb-4 text-[#003d82]">💭 Repleksyon (Part 2)</h3>
+                        <div class="space-y-4">
+                            <label class="form-label">1. Kung bibigyan ka ng pagkakataong muling idisenyo ang iyong pakikipag-ugnayan sa teknolohiya, anong mga ideal na 'digital habits' ang sa tingin mo ay magdadala ng pinakamalaking epekto sa iyong pagkatao?</label>
+                            <textarea id="ref2-q1" class="w-full border p-2 rounded h-24 mb-4" placeholder="Sagot..."></textarea>
+                            <label class="form-label">2. Sa iyong palagay, kailan nagiging 'toxic' o nakakasama ang social media sa iyong mental na kalusugan?</label>
+                            <textarea id="ref2-q2" class="w-full border p-2 rounded h-24 mb-4" placeholder="Sagot..."></textarea>
+                            <button onclick="submitReflection(2)" id="btn-ref2" class="btn w-full">Tapusin at Pumunta sa Post-Test</button>
+                             <div id="ref2-feedback" class="text-sm font-semibold mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="posttest" class="section">
+            <h2 class="text-2xl font-bold text-[#003d82] mb-4 text-center">Huling Pagsusulit</h2>
+            <div class="max-w-4xl mx-auto space-y-8">
+                <div id="posttest-part1" class="space-y-6"></div>
+                <div id="posttest-part2" class="space-y-6"></div>
+            </div>
+            <div class="text-center mt-8"><button onclick="submitPostTest()" class="btn">Isumite ang Post-Test</button></div>
+        </div>
+
+        <div id="eval" class="section">
+            <h2 class="text-2xl font-bold text-[#003d82] mb-4 text-center">Pagsusuri ng Programa (Evaluation)</h2>
+            <form id="eval-form" onsubmit="submitEvaluation(event)" class="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow space-y-6">
+                <div id="rating-container" class="space-y-6"></div>
+                <div><label class="form-label">Magbigay ng mga pananaw sa pagkatuto.</label><textarea id="eval-insight" class="w-full border p-2 rounded" required></textarea></div>
+                <div><label class="form-label">Magbigay ng mungkahi.</label><textarea id="eval-suggest" class="w-full border p-2 rounded" required></textarea></div>
+                <button type="submit" class="btn w-full">Isumite at Kunin ang Sertipiko</button>
+            </form>
+        </div>
+
+        <div id="cert" class="section">
+            <div class="max-w-4xl mx-auto text-center">
+                <div id="cert-header-container" class="bg-blue-50 border border-blue-200 p-6 rounded-xl mb-8 text-left"></div>
+                
+                <div id="cert-element-container">
+                    <div id="certificate-element" class="certificate-wrapper" style="position: relative; background: #fff; padding: 5px;">
+                        <div style="position: absolute; inset: 0; border: 15px solid #003d82; z-index: 2;"></div>
+                        <div style="position: absolute; inset: 15px; border: 5px solid #d4af37; z-index: 2;"></div>
+                        <div style="position: absolute; inset: 20px; background-image: radial-gradient(#e2e8f0 2px, transparent 2px); background-size: 30px 30px; opacity: 0.6; z-index: 1;"></div>
+                        <div style="position: absolute; left: 0; top: 50px; bottom: 50px; width: 8px; background: #d4af37; z-index: 3;"></div>
+                        <div style="position: absolute; right: 0; top: 50px; bottom: 50px; width: 8px; background: #d4af37; z-index: 3;"></div>
+
+                        <div style="position: absolute; inset: 40px; display: flex; flex-direction: column; justify-content: space-between; text-align: center; z-index: 10; padding: 20px;">
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0 20px;">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/Department_of_Transportation_%28Philippines%29.svg/2048px-Department_of_Transportation_%28Philippines%29.svg.png" style="height: 80px;">
+                                <div>
+                                    <h2 style="font-family: 'Montserrat', sans-serif; font-size: 14px; letter-spacing: 3px; color: #64748b; font-weight: 600;">REPUBLIC OF THE PHILIPPINES</h2>
+                                    <h1 style="font-family: 'Playfair Display', serif; font-weight: 900; font-size: 32px; color: #003d82;">Department of Transportation</h1>
+                                </div>
+                                <img src="https://www.treasury.gov.ph/wp-content/uploads/2023/10/Logo-Bagong-Pilipinas.png" style="height: 80px;">
+                            </div>
+
+                            <div style="margin-top: -5px;">
+                                <h1 style="font-family: 'Playfair Display', serif; font-size: 48px; font-weight: 700; line-height: 1; margin: 0; color: #003d82; text-transform: uppercase;">Certificate of Completion</h1>
+                                <p style="font-family: 'Montserrat', sans-serif; font-size: 16px; letter-spacing: 8px; color: #d4af37; text-transform: uppercase; font-weight: 600; margin-top: 5px;">is awarded to</p>
+                            </div>
+
+                            <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center; gap: 5px;">
+                                
+                                <h2 id="cert-name" style="font-family: 'Playfair Display', serif; font-size: 44px; color: #000; margin: 5px 0;">TRAINEE NAME</h2>
+                                
+                                <p id="cert-body-text" style="margin-top: 5px; color: #334155; font-size: 16px;">
+                                    for their successful participation and completion of
+                                </p>
+                                
+                                <h3 style="font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 22px; color: #003d82; margin: 5px 0;">Digitalization and Psychological Well-Being</h3>
+                                
+                                <p style="font-size: 14px; color: #64748b; max-width: 80%; margin: 5px auto;">
+                                    Given this <span id="cert-date">DATE</span> at The Columbia Tower, Department of Transportation, Ortigas Ave., Brgy. Wack-Wack, Mandaluyong City
+                                </p>
+
+                                <div style="width: 200px; height: 2px; background: #d4af37; margin: 10px auto;"></div>
+
+                                <p style="font-size: 13px; font-weight: bold; color: #334155;">
+                                    Actual Date of Training: <span id="cert-actual-date">DATE</span> | 04 hours training credited
+                                </p>
+
+                                <div style="margin-top: 10px; background: #f8fafc; border: 1px solid #e2e8f0; display: inline-block; align-self: center; padding: 5px 15px; border-radius: 4px;">
+                                    <p style="font-size: 12px; font-weight: bold; color: #003d82; margin: 0;">Competency Completed</p>
+                                    <p style="font-size: 11px; color: #475569; margin: 0;">Core Competency | Basic Level | Quality Management</p>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; padding: 0 40px;">
+                                <div style="text-align: left; display: flex; flex-direction: column; align-items: center;">
+                                    <div id="qrcode-box" style="padding: 5px; background: white; display: inline-block; border: 1px solid #eee;">
+                                        <canvas id="qrcode-canvas"></canvas>
+                                    </div>
+                                    <p id="cert-id" style="font-size: 10px; margin-top: 5px; font-weight: bold; color: #003d82;">ID: PENDING</p>
+                                </div>
+                                <div style="text-align: center;">
+                                    <div style="height: 40px;"></div> 
+                                    <div style="border-top: 2px solid #003d82; width: 300px; margin-top: 5px; margin-bottom: 5px;"></div>
+                                    <p style="font-weight: 700; color: #003d82; font-size: 16px;">ERIKA LLYSSA G. MAGPAYO</p>
+                                    <p style="font-size: 11px; color: #64748b; line-height: 1.4;">
+                                        Director IV for Administrative Service concurrent<br>
+                                        Management Information Systems Service
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="cert-actions-container" class="mt-8 flex flex-col gap-4 items-center">
+                    </div>
+            </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="admin-page">
+      <div class="bg-[#003d82] text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
+          <div class="flex items-center gap-2">
+            <h2 class="text-xl font-bold">DOTr Admin Dashboard</h2>
+            <span class="text-xs bg-white/20 px-2 py-1 rounded">Digital Well-Being</span>
+          </div>
+          <div>
+              <button onclick="exportToExcel()" class="bg-green-600 px-4 py-2 rounded mr-2 hover:bg-green-700 text-sm font-bold"><i class="fas fa-file-excel mr-2"></i>Export</button>
+              <button onclick="handleLogout()" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700 text-sm">Log Out</button>
+          </div>
+      </div>
+      
+      <div class="p-6">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div class="stat-card"><div class="stat-val" id="stat-total">0</div><div class="stat-label">Total Trainees</div></div>
+              <div class="stat-card"><div class="stat-val text-green-600" id="stat-completed">0</div><div class="stat-label">Completed</div></div>
+              <div class="stat-card"><div class="stat-val text-amber-600" id="stat-pending">0</div><div class="stat-label">Pending</div></div>
+              <div class="stat-card"><div class="stat-val text-blue-600" id="stat-avg">0</div><div class="stat-label">Avg Post-Test</div></div>
+          </div>
+
+          <div class="admin-table-container">
+              <table class="data-table" id="admin-table">
+                  <thead>
+                      <tr>
+                          <th>Name</th>
+                          <th>Email</th>
+                          <th>Office</th>
+                          <th>Gender</th>
+                          <th>Pre-Test</th>
+                          <th>Post-Test</th>
+                          <th>Refl 1</th>
+                          <th>Refl 2</th>
+                          <th>Cert ID</th>
+                          <th>Date Done</th>
+                          <th>Action</th>
+                      </tr>
+                  </thead>
+                  <tbody id="admin-tbody"></tbody>
+              </table>
+          </div>
+      </div>
+  </div>
+
+  <div id="ai-fab" onclick="toggleChat()"><i class="fas fa-comment-dots text-xl"></i></div>
+  <div id="ai-chat-window">
+    <div class="chat-header">
+        <span>DOTr Assistant</span>
+        <i class="fas fa-times cursor-pointer" onclick="toggleChat()"></i>
+    </div>
+    <div class="chat-body" id="chat-box">
+      <div class="chat-msg bot-msg">
+          <p class="mb-2">Kumusta! Narito ako upang tumulong. Pumili sa ibaba:</p>
+          <div class="chat-btn-grid">
+            <button class="chat-btn" onclick="sendQuery('login')">🔑 Login Help</button>
+            <button class="chat-btn" onclick="sendQuery('cert')">🏆 Signed Cert</button>
+            <button class="chat-btn" onclick="sendQuery('score')">📊 Passing Grade</button>
+            <button class="chat-btn" onclick="sendQuery('tech')">⚙️ Technical</button>
+            <button class="chat-btn" onclick="sendQuery('video')">📺 Video Issue</button>
+            <button class="chat-btn" onclick="sendQuery('about')">ℹ️ About Course</button>
+          </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="admin-modal" class="modal-overlay">
+    <div class="modal-box">
+      <h3 class="text-xl font-bold mb-4 text-[#003d82]">Admin Access</h3>
+      <input type="password" id="admin-pass" placeholder="Password" class="w-full border p-2 rounded mb-4">
+      <div id="2fa-box" class="hidden"><input type="text" id="admin-2fa" placeholder="2FA Code" class="w-full border p-2 rounded mb-4 text-center"></div>
+      <button onclick="verifyAdmin()" class="btn w-full">Login</button>
+      <button onclick="document.getElementById('admin-modal').style.display='none'" class="mt-4 text-xs underline text-gray-500">Close</button>
+    </div>
+  </div>
+
+  <canvas id="confetti-canvas" style="position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999;"></canvas>
+
+  <script>
+    /* FIREBASE INIT */
+    const firebaseConfig = { apiKey: "AIzaSyC53_4NTHA-4-_zbhMq8ewZpXSjRRSR8t8", authDomain: "digital-dotr-training.firebaseapp.com", projectId: "digital-dotr-training", storageBucket: "digital-dotr-training.firebasestorage.app", messagingSenderId: "1041908407814", appId: "1:1041908407814:web:14b292604e8eb5320ded87", measurementId: "G-YJXM0XJH4J" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let currentUser = null; 
+    let unlockedTabs = ['intro'];
+    let allRecords = [];
+
+    /* SAME QUESTIONS AS CITIZEN2 */
+    const mcq = [
+      { q: "Ano ang pangunahing paksa ng video podcast?", a: ["Kaalamang pinansyal", "Pag-unawa sa mental health at well-being sa digital age", "Gen Alpha", "Konserbasyon"], c: 1 },
+      { q: "Ibig sabihin ng 'Everything is accessible with just one click'?", a: ["Digital age convenience", "Libraries", "Stores", "Manual systems"], c: 0 },
+      { q: "Kapaki-pakinabang na ambag ng teknolohiya?", a: ["Stigma", "Online counseling access", "Wala", "Less research"], c: 1 },
+      { q: "Epekto ng blue light?", a: ["Pataas melatonin", "Gana kumain", "Bawas melatonin (puyat)", "Wala"], c: 2 },
+      { q: "Gamit sa exposure therapy?", a: ["Chatbot", "Virtual Reality (VR)", "SMS", "Email"], c: 1 },
+      { q: "Tawag sa patuloy na pag-scroll?", a: ["Deep reading", "Doom scrolling", "Mindful viewing", "Silent scrolling"], c: 1 },
+      { q: "HINDI hamon sa mental health?", a: ["Stigma", "Kakulangan ng professionals", "Sobra-sobrang psychologists", "Always-on culture"], c: 2 },
+      { q: "Positibong gawain sa trabaho?", a: ["Always-on", "Work-life balance policies", "Overtime", "24/7 chat"], c: 1 }
+    ];
+    const tf = [
+      { q: "Information overload leads to overthinking.", a: ["TAMA", "MALI"], c: 0 },
+      { q: "'Me time' ay dapat hiwalay sa gawaing bahay.", a: ["TAMA", "MALI"], c: 0 },
+      { q: "Social comparison causes unrealistic expectations.", a: ["TAMA", "MALI"], c: 0 },
+      { q: "Biophilia Hypothesis: connection with nature.", a: ["TAMA", "MALI"], c: 0 },
+      { q: "Gadgets as reward affects reward systems.", a: ["TAMA", "MALI"], c: 0 },
+      { q: "Setting boundaries is BAD for mental health.", a: ["TAMA", "MALI"], c: 1 },
+      { q: "No one-size-fits-all approach.", a: ["TAMA", "MALI"], c: 0 }
+    ];
+
+    const matchPairs = [
+        { id: 1, term: "Blue Light", def: "Nakakaapekto sa pagtulog (Melatonin suppression)" },
+        { id: 2, term: "Doom Scrolling", def: "Pagbabasa ng negatibong balita nang tuloy-tuloy" },
+        { id: 3, term: "Digital Detox", def: "Pahinga sa gadgets para sa mental clarity" },
+        { id: 4, term: "FOMO", def: "Takot na mahuli sa balita o trends" }
+    ];
+
+    const evalItems = [
+        "Ang mga layunin ng kurso ay malinaw na inilahad at madaling maunawaan.",
+        "Ang pagkakasunod-sunod ng mga paksa ay may magandang daloy.",
+        "Ang resource person ay nagpakita ng kasanayan sa paksa.",
+        "May pagsisikap na iugnay ang paksa sa tunay na buhay.",
+        "Nalaman ko ang iskedyul at layunin ng kurso.",
+        "Epektibo ang paghahatid ng kurso.",
+        "Ang mga materyales ay angkop sa layunin.",
+        "Ang mga gawain ay maayos at madaling sundan.",
+        "Ang nilalaman ay napapanahon at wasto.",
+        "Ibinigay ang mga kinakailangang materyales.",
+        "Ang setup ay komportable at walang abala.",
+        "Ang natutunan ay magagamit sa trabaho.",
+        "Natuto ako ng bagong kaalaman.",
+        "Ang natutunan ay makakatulong sa aking pag-unlad.",
+        "Naabot ng kurso ang aking inaasahan.",
+        "Irerekomenda ko ito sa aking katrabaho."
+    ];
+
+    /* INIT */
+    window.onload = function() {
+        renderQuiz('pretest-part1', mcq, false, 0);
+        renderQuiz('pretest-part2', tf, false, 8);
+        preparePostTest();
+        renderEval();
+        initMatchingGame();
+        
+        // Initialize Tracking for both local videos
+        initVideoTracking('vid-1', 'timer-fill-1', 'btn-to-act1', 1);
+        initVideoTracking('vid-2', 'timer-fill-2', 'btn-to-act2', 2);
+        
+        db.collection('users').onSnapshot((snapshot) => {
+            allRecords = [];
+            snapshot.forEach((doc) => allRecords.push({ id: doc.id, ...doc.data() }));
+            if(document.getElementById('admin-page').classList.contains('active')) renderAdminTable();
+        });
+    };
+
+    /* AUTH LOGIC */
+    async function handleLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value.toLowerCase();
+        const btn = document.getElementById('login-submit-btn');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
+        
+        const snap = await db.collection('users').where('user_email', '==', email).get();
+        if(!snap.empty) {
+            currentUser = { id: snap.docs[0].id, ...snap.docs[0].data() };
+            loginSuccess();
+        } else {
+            alert("Please Register first.");
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('attendance-section').classList.remove('hidden');
+            document.getElementById('attendance-section').classList.add('active');
+            document.getElementById('reg-email').value = email;
+        }
+        btn.innerHTML = 'Pumasok';
+    }
+
+    async function handleAttendance(e) {
+        e.preventDefault();
+        const data = {
+            user_name: document.getElementById('reg-name').value.toUpperCase(),
+            user_email: document.getElementById('reg-email').value.toLowerCase(),
+            gender: document.getElementById('reg-gender').value,
+            employment: document.getElementById('reg-employment').value,
+            position: document.getElementById('reg-position').value,
+            office: document.getElementById('reg-office').value,
+            created_at: new Date().toISOString(),
+            progress: 'intro'
+        };
+        const ref = await db.collection('users').add(data);
+        currentUser = { id: ref.id, ...data };
+        loginSuccess();
+    }
+
+    function loginSuccess() {
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('attendance-section').classList.add('hidden');
+        document.getElementById('main-nav').classList.remove('hidden');
+        document.getElementById('user-controls').classList.remove('hidden');
+        document.getElementById('display-name').textContent = currentUser.user_name;
+        
+        unlockTab('pretest');
+        if(currentUser.pretest_score) { 
+            unlockTab('module1'); 
+            document.getElementById('badge-pretest').innerHTML = '✅ Completed'; 
+            document.getElementById('badge-pretest').classList.remove('hidden'); 
+        }
+        if(currentUser.act1_done) { 
+            unlockTab('activity1'); 
+            document.getElementById('badge-act1').innerHTML = '✅ Passed'; 
+            document.getElementById('badge-act1').classList.remove('hidden'); 
+            // If completed, ensure next button is enabled
+            const btn = document.getElementById('btn-to-act1');
+            btn.disabled = false;
+            btn.classList.remove('opacity-50','cursor-not-allowed');
+        }
+        if(currentUser.mod1_done) unlockTab('module2'); 
+        
+        if(currentUser.act2_done) { 
+            unlockTab('posttest'); 
+            document.getElementById('badge-act2').innerHTML = '✅ Submitted'; 
+            document.getElementById('badge-act2').classList.remove('hidden'); 
+            // If completed, ensure next button is enabled
+            const btn = document.getElementById('btn-to-act2');
+            btn.disabled = false;
+            btn.classList.remove('opacity-50','cursor-not-allowed');
+
+            if(currentUser.plan_type) {
+                 document.getElementById('step-calc').classList.add('hidden');
+                 document.getElementById('step-select').classList.add('hidden');
+                 document.getElementById('plan-name').innerText = currentUser.plan_type;
+                 document.getElementById('plan-list').innerHTML = planDetails[currentUser.plan_type].map(i => `<li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-2"></i>${i}</li>`).join('');
+                 document.getElementById('step-result').classList.remove('hidden');
+            }
+        }
+        
+        if(currentUser.posttest_passed) { unlockTab('eval'); document.getElementById('badge-posttest').innerHTML = `⭐ Score: ${currentUser.posttest_score}`; document.getElementById('badge-posttest').classList.remove('hidden'); }
+        if(currentUser.eval_done) { 
+            unlockTab('cert'); 
+            generateCert(); 
+            updateCertUI();
+        }
+        
+        switchTab(currentUser.progress || 'intro');
+    }
+
+    function unlockTab(id) { document.getElementById(`tab-${id}`).classList.remove('disabled'); unlockedTabs.push(id); }
+    function unlockAndSwitch(id) { unlockTab(id); switchTab(id); if(currentUser) db.collection('users').doc(currentUser.id).update({progress:id}); }
+    
+    function switchTab(id) {
+        if(!unlockedTabs.includes(id) && id!=='intro') return;
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(`tab-${id}`).classList.add('active');
+        if(id === 'cert' && currentUser) updateCertUI();
+    }
+
+    /* UPDATED: VIDEO TRACKING LOGIC (Strict) */
+    function initVideoTracking(vidId, fillId, btnId, modNum) {
+        const vid = document.getElementById(vidId);
+        const fill = document.getElementById(fillId);
+        const btn = document.getElementById(btnId);
+        
+        // Track the furthest point user has watched
+        let maxTime = 0;
+
+        // On time update (runs continuously while playing)
+        vid.addEventListener('timeupdate', () => {
+            if (!vid.seeking) {
+                // If we are playing normally, update maxTime if we've gone further
+                if (vid.currentTime > maxTime) {
+                    maxTime = vid.currentTime;
+                }
+            }
+            
+            // Update the green progress bar visually based on actual %
+            if (vid.duration) {
+                const pct = (vid.currentTime / vid.duration) * 100;
+                fill.style.width = pct + "%";
+            }
+        });
+
+        // On seeking (user drags the bar)
+        vid.addEventListener('seeking', () => {
+            // Calculate a small buffer (e.g., 0.5s) to allow minor skips due to mouse jitter
+            const buffer = 0.5;
+            
+            // If they try to seek AHEAD of what they've watched
+            if (vid.currentTime > maxTime + buffer) {
+                // Force them back to the maxTime they earned
+                vid.currentTime = maxTime; 
+                console.log("Seeking ahead restricted.");
+            }
+        });
+
+        // On ended (video finishes)
+        vid.addEventListener('ended', async () => {
+            // Enable button
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            // Ensure visual bar is 100%
+            fill.style.width = "100%";
+            
+            // Save progress to DB immediately
+            if(currentUser) {
+                const field = modNum === 1 ? 'mod1_done' : 'mod2_done';
+                await db.collection('users').doc(currentUser.id).update({ [field]: true });
+                currentUser[field] = true;
+            }
+        });
+    }
+
+    /* MATCHING GAME */
+    let matches = []; let selectedLeft = null;
+    function initMatchingGame() {
+        const colA = document.getElementById('match-col-a');
+        const colB = document.getElementById('match-col-b');
+        const terms = [...matchPairs].sort(()=>Math.random()-0.5);
+        const defs = [...matchPairs].sort(()=>Math.random()-0.5);
+        
+        colA.innerHTML = terms.map(i => `<div class="match-card" data-id="${i.id}" onclick="clickLeft(this)">${i.term}</div>`).join('');
+        colB.innerHTML = defs.map(i => `<div class="match-card" data-id="${i.id}" onclick="clickRight(this)">${i.def}</div>`).join('');
+    }
+    function clickLeft(el) { if(el.classList.contains('matched')) return; document.querySelectorAll('#match-col-a .match-card').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); selectedLeft = el; }
+    function clickRight(el) { if(!selectedLeft || el.classList.contains('matched')) return; selectedLeft.classList.remove('selected'); selectedLeft.classList.add('temp-matched'); el.classList.add('temp-matched'); matches.push({ left: selectedLeft.dataset.id, right: el.dataset.id, elLeft: selectedLeft, elRight: el }); selectedLeft = null; }
+    function checkAllMatches() {
+        if(matches.length < 4) { alert("Please match all pairs first."); return; }
+        let score = 0; matches.forEach(m => { if(m.left === m.right) score++; });
+        if(score >= 3) {
+            document.getElementById('match-feedback').innerText = `Success! Score: ${score}/4. Proceeding...`;
+            document.getElementById('ref1-form').classList.remove('hidden');
+             matches.forEach(m => { m.elLeft.classList.add('matched'); m.elRight.classList.add('matched'); m.elLeft.classList.remove('temp-matched'); m.elRight.classList.remove('temp-matched'); });
+        } else {
+            alert(`Score: ${score}/4. Failed. Please try again.`);
+            matches.forEach(m => { m.elLeft.classList.remove('temp-matched'); m.elRight.classList.remove('temp-matched'); });
+            matches = []; document.getElementById('match-feedback').innerText = "";
+        }
+    }
+
+    /* REFLECTION SCORING */
+    function calculateEssayScore(text, keywords) {
+        let score = 0; if(text.length > 50) score += 5; if(text.length > 150) score += 3;
+        let hits = 0; keywords.forEach(w => { if(text.toLowerCase().includes(w)) hits++; });
+        score += (hits * 2); return Math.min(score, 15);
+    }
+    async function submitReflection(num) {
+        const q1 = document.getElementById(`ref${num}-q1`).value;
+        const q2 = document.getElementById(`ref${num}-q2`).value;
+        const btn = event.target; const fbBox = document.getElementById(`ref${num}-feedback`);
+        if(q1.length < 20 || q2.length < 20) { alert("Please elaborate more."); return; }
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scoring...';
+        const key1 = ["notification", "schedule", "limit", "distraction", "focus", "work", "balance", "anxiety", "habit"];
+        const key2 = ["connection", "face", "presence", "empathy", "communication", "quality", "online", "relationship"];
+        const total = calculateEssayScore(q1, key1) + calculateEssayScore(q2, key2);
+        
+        if(total >= 25) {
+             fbBox.innerText = `Score: ${total}/30. Passed!`; fbBox.className = "text-sm font-bold text-green-600 mt-2";
+             if(currentUser) await db.collection('users').doc(currentUser.id).update({ [`act${num}_done`]: true, [`ref${num}_score`]: total });
+             setTimeout(() => { if(num === 1) unlockAndSwitch('module2'); if(num === 2) { preparePostTest(); unlockAndSwitch('posttest'); } }, 1500);
+        } else {
+             fbBox.innerText = `Score: ${total}/30. Failed (Need 25). Elaborate more.`; fbBox.className = "text-sm font-bold text-red-600 mt-2"; btn.innerHTML = "Try Again";
+        }
+    }
+
+    /* PLAN CALCULATOR */
+    const planDetails = {
+        'Gradual': ['Magtakda ng daily app limit.', 'Iwasan ang phone sa unang 30 mins ng umaga.', 'I-track ang daily usage.'],
+        'Detox': ['Full weekend unplug.', 'Ipaalam sa pamilya na offline ka.', 'Gumamit ng analog alarm clock.'],
+        'Replacement': ['Maglista ng 10 hobbies.', 'Mag-10 pushups bago mag-scroll.', 'Magbasa ng 1 page kapag bored.'],
+        'Mindful': ['Tanungin ang sarili bago i-unlock.', 'Huminga ng malalim bago mag-click.', 'Linisin ang home screen.']
+    };
+    
+    async function selPlan(el, type) {
+        document.querySelectorAll('.intervention-card').forEach(c=>c.classList.remove('selected'));
+        if(el) el.classList.add('selected');
+        
+        document.getElementById('plan-name').innerText = type;
+        document.getElementById('plan-list').innerHTML = planDetails[type].map(i => `<li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-2"></i>${i}</li>`).join('');
+        document.getElementById('step-select').classList.add('hidden'); 
+        document.getElementById('step-result').classList.remove('hidden');
+
+        if(currentUser && el) {
+             await db.collection('users').doc(currentUser.id).update({ plan_type: type });
+             currentUser.plan_type = type;
+        }
+    }
+    
+    function calcTotal() {
+        const ids = ['st-social','st-work','st-game','st-stream']; 
+        let t = 0; ids.forEach(id => t += parseFloat(document.getElementById(id).value)||0);
+        document.getElementById('st-total').innerText = t;
+    }
+
+    /* QUIZ FUNCTIONS */
+    function renderQuiz(id, items, showRes, startIdx) {
+        document.getElementById(id).innerHTML = items.map((i, idx) => `
+            <div class="bg-white p-4 rounded border ${showRes ? (i.c===i.sel?'border-green-500 bg-green-50':'border-red-500 bg-red-50'):''}">
+                <p class="font-bold mb-2">${idx+1+startIdx}. ${i.q}</p>
+                <div class="space-y-2">${i.a.map((o,ox)=>`<label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="${id}-${idx}" value="${ox}" ${showRes?'disabled':''} ${i.sel===ox?'checked':''}>${o}</label>`).join('')}</div>
+            </div>`).join('');
+    }
+    async function submitPreTest() {
+        let score = 0;
+        mcq.forEach((i,x) => { const el = document.querySelector(`input[name="pretest-part1-${x}"]:checked`); if(el && parseInt(el.value)===i.c) score++; });
+        tf.forEach((i,x) => { const el = document.querySelector(`input[name="pretest-part2-${x}"]:checked`); if(el && parseInt(el.value)===i.c) score++; });
+        alert(`Pre-Test Submitted. Score: ${score}/15`);
+        if(currentUser) await db.collection('users').doc(currentUser.id).update({ pretest_score: score });
+        unlockAndSwitch('module1');
+    }
+    let shuffledMcq = [], shuffledTf = [];
+    function preparePostTest() { shuffledMcq = [...mcq].sort(()=>Math.random()-0.5); shuffledTf = [...tf].sort(()=>Math.random()-0.5); renderQuiz('posttest-part1', shuffledMcq, false, 0); renderQuiz('posttest-part2', shuffledTf, false, 8); }
+    async function submitPostTest() {
+        let s = 0;
+        shuffledMcq.forEach((i,x) => { const el = document.querySelector(`input[name="posttest-part1-${x}"]:checked`); if(el) { i.sel = parseInt(el.value); if(i.sel===i.c) s++; } });
+        shuffledTf.forEach((i,x) => { const el = document.querySelector(`input[name="posttest-part2-${x}"]:checked`); if(el) { i.sel = parseInt(el.value); if(i.sel===i.c) s++; } });
+        if(s >= 14) {
+            alert(`Passed! Score: ${s}/15`); renderQuiz('posttest-part1', shuffledMcq, true, 0); renderQuiz('posttest-part2', shuffledTf, true, 8);
+            if(currentUser) await db.collection('users').doc(currentUser.id).update({ posttest_score: s, posttest_passed: true });
+            unlockAndSwitch('eval');
+        } else { alert(`Failed. Score: ${s}/15. Try again.`); preparePostTest(); }
+    }
+    function renderEval() { document.getElementById('rating-container').innerHTML = evalItems.map((q,i) => `<div><p class="font-medium mb-2">${q}</p><div class="flex justify-between md:justify-start md:gap-8">${[1,2,3,4,5].map(n=>`<label class="flex flex-col items-center"><input type="radio" name="e${i}" value="${n}" required><span class="text-sm">${n}</span></label>`).join('')}</div></div>`).join(''); }
+    
+    async function submitEvaluation(e) {
+        e.preventDefault();
+        const snap = await db.collection('users').where('eval_done', '==', true).get();
+        const count = snap.size + 1;
+        const certId = `HRDD-LDU-CERT2026-${count.toString().padStart(4, '0')}`;
+        const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        if(currentUser) {
+            await db.collection('users').doc(currentUser.id).update({ eval_done: true, cert_id: certId, completion_date: date });
+            currentUser.cert_id = certId; currentUser.completion_date = date; currentUser.eval_done = true;
+        }
+        generateCert(); updateCertUI(); unlockAndSwitch('cert'); 
+        const c = new ConfettiGenerator({target: 'confetti-canvas'}); c.render(); window.scrollTo(0,0);
+    }
+
+    /* CERTIFICATE GENERATION */
+    function generateCert(user) {
+        const u = user || currentUser;
+        const name = u ? u.user_name : "JUAN DELA CRUZ";
+        const date = u && u.completion_date ? u.completion_date : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        const id = u && u.cert_id ? u.cert_id : "PENDING";
+        
+        let pronoun = "their";
+        if(u && u.gender === "Male") pronoun = "his";
+        if(u && u.gender === "Female") pronoun = "her";
+        
+        document.getElementById('cert-name').innerText = name;
+        document.getElementById('cert-date').innerText = date;
+        document.getElementById('cert-actual-date').innerText = date;
+        document.getElementById('cert-id').innerText = `ID: ${id}`;
+        
+        document.getElementById('cert-body-text').innerText = `for ${pronoun} successful participation and completion of`;
+        
+        var qr = new QRious({
+          element: document.getElementById('qrcode-canvas'),
+          value: `Name: ${name} | ID: ${id} | Course: Digital Well-being | Date: ${date} | 4 Hours`,
+          size: 100
+        });
+    }
+
+    async function downloadCertPDF(user) {
+        const u = user || currentUser;
+        
+        const element = document.getElementById('certificate-element');
+        const parent = document.getElementById('cert-element-container');
+        
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100vw';
+        overlay.style.height = '100vh';
+        overlay.style.backgroundColor = '#ffffff';
+        overlay.style.zIndex = '99999';
+        overlay.style.display = 'flex';
+        overlay.style.justifyContent = 'center';
+        overlay.style.alignItems = 'center';
+        
+        document.body.appendChild(overlay);
+        overlay.appendChild(element);
+
+        const certId = u?.cert_id || "REF";
+        const traineeName = (u?.user_name || "User").replace(/\s+/g, '_');
+        const finalFilename = `${certId}_${traineeName}.pdf`;
+        
+        const opt = {
+            margin: 0,
+            filename: finalFilename,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false },
+            jsPDF: { unit: 'px', format: [1123, 794], orientation: 'landscape' }
+        };
+
+        try {
+            await html2pdf().set(opt).from(element).save();
+        } catch (error) {
+            console.error("PDF Error:", error);
+            alert("Error generating PDF.");
+        } finally {
+            parent.appendChild(element);
+            document.body.removeChild(overlay);
+            if(currentUser) generateCert(currentUser);
+        }
+    }
+
+    function updateCertUI() {
+        const header = document.getElementById('cert-header-container');
+        const actions = document.getElementById('cert-actions-container');
+
+        if (currentUser && currentUser.signed_cert_url) {
+            header.innerHTML = `
+                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">
+                    <strong class="font-bold">✅ Good news!</strong> Your signed certificate is ready.
+                </div>`;
+            actions.innerHTML = `
+                 <a href="${currentUser.signed_cert_url}" target="_blank" class="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 font-bold shadow-lg transition w-full md:w-auto text-center">
+                    <i class="fas fa-file-signature mr-2"></i> Download Signed Copy
+                </a>`;
+        } else {
+            header.innerHTML = `
+                <h3 class="font-bold text-[#003d82] text-lg mb-2">📢 Sertipikasyon:</h3>
+                <ol class="list-decimal pl-5 space-y-2 text-sm text-gray-700">
+                    <li>I-verify ang iyong pangalan sa sertipiko.</li>
+                    <li>Gamitin ang <strong>"Download PDF"</strong> para i-save ang kopya.</li>
+                    <li>Para sa Signed Copy, i-upload ang PDF sa SharePoint link.</li>
+                </ol>`;
+            
+            actions.innerHTML = `
+                <button class="bg-blue-600 text-white px-8 py-3 rounded-lg shadow-lg hover:bg-blue-700 font-bold flex items-center gap-2" onclick="downloadCertPDF()">
+                    <i class="fas fa-download"></i> Download PDF
+                </button>
+                <div class="flex flex-wrap justify-center gap-4 w-full">
+                    <a href="https://dotrgovph-my.sharepoint.com/:f:/g/personal/hrdd_ldu_dotr_gov_ph/IgDAkkEMIxMNS7eOBZlWTGswARXRGedHu07Gr99sacmFiAU?e=rM9phP" target="_blank" class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 flex items-center gap-2 text-sm font-bold">
+                        <i class="fas fa-cloud-upload-alt"></i> Upload to SharePoint (Request Signed)
+                    </a>
+                </div>`;
+        }
+    }
+
+    function handleLogout() { location.reload(); }
+
+    /* CHATBOT (FAB Logic) */
+    function toggleChat() {
+        const win = document.getElementById('ai-chat-window');
+        win.style.display = win.style.display === 'flex' ? 'none' : 'flex';
+    }
+    function sendQuery(t) {
+        const box = document.getElementById('chat-box');
+        let a = "";
+        if(t==='cert') a = "<p><strong>Signed Copy:</strong> Tapusin ang modules > Download PDF > Upload sa SharePoint button > Balikan pagkatapos ng 3-5 araw.</p>";
+        else if(t==='login') a = "<p><strong>Login:</strong> Ilagay lamang ang email. Kung bago, mag-fill up sa Attendance Form.</p>";
+        else if(t==='score') a = "<p><strong>Passing:</strong> Activity 1 (3/4), Reflection (25 pts), Post-Test (14/15).</p>";
+        else if(t==='video') a = "<p><strong>Video:</strong> Kailangan tapusin ang timer bago mag-Next. Huwag i-skip.</p>";
+        else if(t==='tech') a = "<p><strong>Tech Issue:</strong> I-refresh ang browser. Check internet connection.</p>";
+        else if(t==='about') a = "<p><strong>About:</strong> Course tungkol sa Digital Well-Being at Mental Health sa trabaho.</p>";
+        
+        box.innerHTML += `<div class="chat-msg user-msg text-right">Help: ${t}</div>`;
+        setTimeout(() => {
+            box.insertAdjacentHTML('beforeend', `<div class="chat-msg bot-msg text-left">${a}</div>`);
+            box.scrollTop = box.scrollHeight;
+        }, 500);
+    }
+
+    /* ADMIN */
+    function showAdminLogin() { document.getElementById('admin-modal').style.display = 'flex'; }
+    function verifyAdmin() {
+        if(document.getElementById('admin-pass').value === 'hrdd2O26') {
+             document.getElementById('2fa-box').classList.remove('hidden');
+             if(document.getElementById('admin-2fa').value === '267588') {
+                 document.getElementById('admin-modal').style.display = 'none';
+                 document.getElementById('admin-page').classList.add('active');
+                 renderAdminTable();
+             }
+        } else alert("Invalid Password");
+    }
+
+    function renderAdminTable() {
+        const tbody = document.getElementById('admin-tbody');
+        let total=0, comp=0, pending=0, scoreSum=0, scoreCount=0;
+
+        tbody.innerHTML = allRecords.map(u => {
+            total++;
+            if(u.eval_done) comp++; else pending++;
+            if(u.posttest_score) { scoreSum+=u.posttest_score; scoreCount++; }
+            
+            return `
+            <tr class="border-b bg-white hover:bg-gray-50 text-xs">
+                <td class="p-3 font-bold">${u.user_name}</td>
+                <td class="p-3 text-xs">${u.user_email}</td>
+                <td class="p-3 text-xs">${u.office || '-'}</td>
+                <td class="p-3">${u.gender || '-'}</td>
+                <td class="p-3 font-mono font-bold">${u.pretest_score || '-'}</td>
+                <td class="p-3 font-mono font-bold text-blue-600">${u.posttest_score || '-'}</td>
+                <td class="p-3">${u.ref1_score || '-'}</td>
+                <td class="p-3">${u.ref2_score || '-'}</td>
+                <td class="p-3 text-xs font-mono">${u.cert_id || 'PENDING'}</td>
+                <td class="p-3 text-xs">${u.completion_date || '-'}</td>
+                <td class="p-3 text-center">
+                    <div class="flex flex-col gap-1 items-center">
+                        ${u.signed_cert_url 
+                            ? `<a href="${u.signed_cert_url}" target="_blank" class="text-green-600 font-bold hover:underline">Link ✅</a>`
+                            : `<button class="text-blue-600 text-xs hover:text-blue-800" onclick="uploadSignedLink('${u.id}')">Add Link</button>`
+                        }
+                        ${u.eval_done 
+                            ? `<button class="text-xs bg-gray-100 hover:bg-gray-200 border px-2 py-1 rounded" onclick="adminGenCert('${u.id}')">🖨️ Gen PDF</button>`
+                            : ''
+                        }
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+        
+        document.getElementById('stat-total').innerText = total;
+        document.getElementById('stat-completed').innerText = comp;
+        document.getElementById('stat-pending').innerText = pending;
+        document.getElementById('stat-avg').innerText = scoreCount ? (scoreSum/scoreCount).toFixed(1) : 0;
+    }
+
+    async function adminGenCert(userId) {
+        const user = allRecords.find(u => u.id === userId);
+        if(!user) return;
+        generateCert(user);
+        await downloadCertPDF(user);
+    }
+
+    async function uploadSignedLink(id) {
+        const url = prompt("Enter SharePoint/Drive Link:");
+        if (url) { await db.collection('users').doc(id).update({ signed_cert_url: url }); alert("Saved!"); }
+    }
+
+    function exportToExcel() {
+        const data = allRecords.map(u => ({
+            Name: u.user_name, Email: u.user_email, Office: u.office, Gender: u.gender,
+            PreTest: u.pretest_score, PostTest: u.posttest_score,
+            Ref1: u.ref1_score, Ref2: u.ref2_score, CertID: u.cert_id, Date: u.completion_date
+        }));
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Trainees");
+        XLSX.writeFile(wb, "Digital_Wellbeing_Report.xlsx");
+    }
+  </script>
+ </body>
+</html>
