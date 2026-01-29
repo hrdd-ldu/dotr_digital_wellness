@@ -589,40 +589,39 @@
     }
 
     /* ----------------------------------------------------------------
-       SECURE ADMIN LOGIN (FIXED: PREVENTS DOUBLE CLICK)
+       SECURE ADMIN LOGIN (RESTRICTED TO 2 ACCOUNTS)
     ---------------------------------------------------------------- */
+    // IMPORTANT: REPLACE THESE WITH THE ACTUAL 2 ADMIN EMAILS
+    const ALLOWED_ADMINS = ["admin1@dotr.gov.ph", "admin2@gmail.com"]; 
+
     function handleAdminLogin() {
         const btn = document.getElementById('admin-login-btn');
+        if (btn.disabled || btn.classList.contains('opacity-50')) return; // Debounce
         
-        // Prevent double clicks
-        if (btn.disabled || btn.classList.contains('opacity-50')) return; 
-        
-        // Visual feedback
         const originalText = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         btn.disabled = true;
         btn.classList.add('opacity-50', 'cursor-not-allowed');
 
         const provider = new firebase.auth.GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' }); // Forces account picker
+        provider.setCustomParameters({ prompt: 'select_account' }); 
 
         firebase.auth().signInWithPopup(provider).then((res) => {
-            checkAdminAccess(res.user.uid);
-            // We keep it disabled until the dashboard loads or fails
+            // IMMEDIATE SECURITY CHECK
+            if (ALLOWED_ADMINS.includes(res.user.email)) {
+                checkAdminAccess(res.user.uid);
+            } else {
+                alert("ACCESS DENIED: Your account (" + res.user.email + ") is not authorized.");
+                firebase.auth().signOut();
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
         }).catch(e => {
-            // Reset button on error
             btn.innerHTML = originalText;
             btn.disabled = false;
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            
-            // Handle the specific conflict error gracefully
-            if (e.code === 'auth/cancelled-popup-request') {
-                console.warn("Popup conflict ignored.");
-                return;
-            } 
-            if (e.code === 'auth/popup-closed-by-user') {
-                return; // Do nothing if they just closed it
-            }
+            if (e.code === 'auth/cancelled-popup-request' || e.code === 'auth/popup-closed-by-user') return;
             alert("Login Error: " + e.message);
         });
     }
@@ -636,7 +635,7 @@
             allRecords = [];
             snapshot.forEach((doc) => allRecords.push({ id: doc.id, ...doc.data() }));
             
-            // Re-enable button (in case they close dashboard later)
+            // Re-enable button
             btn.innerHTML = '<i class="fas fa-lock"></i> Admin';
             btn.disabled = false;
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -648,7 +647,6 @@
             document.getElementById('admin-page').classList.remove('active');
             firebase.auth().signOut();
             
-            // Reset button
             btn.innerHTML = '<i class="fas fa-lock"></i> Admin';
             btn.disabled = false;
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
