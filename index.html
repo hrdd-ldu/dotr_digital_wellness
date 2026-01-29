@@ -19,7 +19,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
   <style>
-    /* RETAINED STYLES FROM DIGITRY1 */
+    /* STYLES RETAINED FROM DIGITRY1 */
     :root {
       --primary: #003d82;
       --secondary: #d32f2f;
@@ -130,7 +130,7 @@
         </div>
         <div id="user-controls" class="hidden flex items-center gap-2">
           <span class="text-sm font-semibold hidden md:inline mr-2 text-white/90">👤 <span id="display-name">User</span></span>
-          <button onclick="handleAdminLogin()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition font-bold"><i class="fas fa-lock"></i> Admin</button>
+          <button id="admin-login-btn" onclick="handleAdminLogin()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-sm transition font-bold"><i class="fas fa-lock"></i> Admin</button>
           <button onclick="handleLogout()" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-sm transition border border-white text-white">Logout</button>
         </div>
       </div>
@@ -507,8 +507,7 @@
     let allRecords = [];
 
     /* ----------------------------------------------------------------
-       RESTORED: USER LOGIN (DIGITRY1 LOGIC)
-       Uses db.collection('users').where(...) based on user_email field.
+       USER LOGIN (DIGITRY1 LOGIC)
     ---------------------------------------------------------------- */
     async function handleLogin(e) {
         e.preventDefault();
@@ -516,15 +515,12 @@
         const btn = document.getElementById('login-submit-btn');
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
         
-        // RESTORED: Query by field instead of ID
         const snap = await db.collection('users').where('user_email', '==', email).get();
 
         if(!snap.empty) {
-            // Success: Take the first matching document
             currentUser = { id: snap.docs[0].id, ...snap.docs[0].data() };
             loginSuccess();
         } else {
-            // Not found: Go to Registration
             document.getElementById('login-section').classList.add('hidden');
             document.getElementById('attendance-section').classList.remove('hidden');
             document.getElementById('attendance-section').classList.add('active');
@@ -534,8 +530,7 @@
     }
 
     /* ----------------------------------------------------------------
-       RESTORED: REGISTRATION DATA (DIGITRY1 STRUCTURE)
-       Uses .add() to create auto-ID, retains all original fields.
+       REGISTRATION DATA (DIGITRY1 STRUCTURE)
     ---------------------------------------------------------------- */
     async function handleAttendance(e) {
         e.preventDefault();
@@ -552,7 +547,6 @@
             progress: 'intro'
         };
         
-        // RESTORED: Use .add() for Auto-ID
         const ref = await db.collection('users').add(data);
         currentUser = { id: ref.id, ...data };
         loginSuccess();
@@ -575,7 +569,6 @@
             document.getElementById('badge-act2').innerHTML = '✅ Submitted'; 
             document.getElementById('badge-act2').classList.remove('hidden'); 
             
-            // Restore Plan UI
             if(currentUser.plan_type) {
                  document.getElementById('step-calc').classList.add('hidden');
                  document.getElementById('step-select').classList.add('hidden');
@@ -596,28 +589,69 @@
     }
 
     /* ----------------------------------------------------------------
-       SECURE ADMIN LOGIN (GOOGLE AUTH)
+       SECURE ADMIN LOGIN (FIXED: PREVENTS DOUBLE CLICK)
     ---------------------------------------------------------------- */
     function handleAdminLogin() {
+        const btn = document.getElementById('admin-login-btn');
+        
+        // Prevent double clicks
+        if (btn.disabled || btn.classList.contains('opacity-50')) return; 
+        
+        // Visual feedback
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+
         const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' }); // Forces account picker
+
         firebase.auth().signInWithPopup(provider).then((res) => {
             checkAdminAccess(res.user.uid);
-        }).catch(e => alert("Admin Login Failed: " + e.message));
+            // We keep it disabled until the dashboard loads or fails
+        }).catch(e => {
+            // Reset button on error
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            // Handle the specific conflict error gracefully
+            if (e.code === 'auth/cancelled-popup-request') {
+                console.warn("Popup conflict ignored.");
+                return;
+            } 
+            if (e.code === 'auth/popup-closed-by-user') {
+                return; // Do nothing if they just closed it
+            }
+            alert("Login Error: " + e.message);
+        });
     }
 
     async function checkAdminAccess(uid) {
         document.getElementById('admin-page').classList.add('active');
+        const btn = document.getElementById('admin-login-btn');
         
         // Listen to Users Collection
         db.collection('users').onSnapshot((snapshot) => {
             allRecords = [];
             snapshot.forEach((doc) => allRecords.push({ id: doc.id, ...doc.data() }));
+            
+            // Re-enable button (in case they close dashboard later)
+            btn.innerHTML = '<i class="fas fa-lock"></i> Admin';
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
             renderAdminTable();
         }, (error) => {
             console.error(error);
             alert("ACCESS DENIED: You are not authorized to view the dashboard.");
             document.getElementById('admin-page').classList.remove('active');
             firebase.auth().signOut();
+            
+            // Reset button
+            btn.innerHTML = '<i class="fas fa-lock"></i> Admin';
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
         });
     }
 
@@ -852,8 +886,7 @@
     }
     
     /* ----------------------------------------------------------------
-       RESTORED: CERTIFICATE ID LOGIC (DIGITRY1)
-       Uses count + 'HRDD-LDU-CERT2026'
+       CERTIFICATE ID LOGIC (DIGITRY1)
     ---------------------------------------------------------------- */
     const evalItems = [
         "Ang mga layunin ng kurso ay malinaw na inilahad at madaling maunawaan.",
@@ -878,7 +911,7 @@
     async function submitEvaluation(e) {
         e.preventDefault();
         
-        // RESTORED: Count users who have 'eval_done' == true to generate sequential ID
+        // Count users who have 'eval_done' == true to generate sequential ID
         const snap = await db.collection('users').where('eval_done', '==', true).get();
         const count = snap.size + 1;
         const certId = `HRDD-LDU-CERT2026-${count.toString().padStart(4, '0')}`;
