@@ -84,7 +84,13 @@
     .intervention-card.selected { border-color: #1e3c72; background: #eff6ff; }
     .intervention-icon { font-size: 3rem; margin-bottom: 0.5rem; }
     .plan-detail-card { background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%); border-left: 5px solid #1e3c72; padding: 2rem; margin-bottom: 1rem; border-radius: 0 12px 12px 0; box-shadow: 0 4px 10px rgba(0,0,0,0.05); animation: slideUp 0.5s forwards; }
+    
+    /* New Animations for Plan Interventions */
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes popIn { 0% { opacity: 0; transform: scale(0.9) translateY(15px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+    .animate-pop-in { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; opacity: 0; }
+    .plan-item-card { background: white; border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); display: flex; align-items: flex-start; gap: 12px; transition: all 0.2s; }
+    .plan-item-card:hover { transform: translateX(8px); border-color: var(--primary); box-shadow: 0 4px 12px rgba(0,61,130,0.1); }
 
     /* Certificate Styles */
     @page { size: A4 landscape; margin: 0; }
@@ -220,8 +226,8 @@
              <div class="max-w-4xl mx-auto">
                 <h2 class="text-3xl font-bold text-[#003d82] mb-6 text-center">Introduksyon</h2>
                 <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-gray-700 leading-relaxed text-justify space-y-4">
-                  <p>Sa mabilis na pag-unlad ng ating teknolohiya, hindi maitatanggi na tayo ay nasa isang natatanging yugto ng kasaysayan—ang digital age. Mula sa paglaganap ng social media hanggang sa pagsibol ng digitalisasyon, ang lahat ay tila abot-kamay na natin sa isang pindot lamang. Ngunit sa likod ng mga modernong kaginhawaang ito, nararapat nating suriin: <strong>Sapat pa ba ang pangangalaga natin sa ating kalusugang mental?</strong></p>
-                  <p>Gabay natin si Sir Jose Mari "Jomar" Hulleza. Handa na ba kayo? Muli, welcome sa ating training!</p>
+                  <p>Sa mabilis na pag-unlad ng ating teknolohiya, hindi maitatanggi na tayo ay nasa isang natatanging yugto ng kasaysayan—ang digital age. Mula sa paglaganap ng social media hanggang sa pagsibol ng digitalisasyon, ang lahat ay tila abot-kamay na natin sa isang pindot lamang. Ngunit sa likod ng mga modernong kaginhawaang ito, nararapat nating suriin: <strong>Sapat pa ba ang pangangalaga natin sa ating kalusugang mental?</strong></p><p>Ito ay isang mahalagang paalala o self-check upang masuri kung ang ating mga kasalukuyang paraan ng pagharap sa mga mental health issues ay epektibo pa sa gitna ng mabilis na pagbabago ng mundo at sa gitna ng digitalisasyon. Sa pamamagitan ng tanong na ito, mas mabibigyang-diin natin ang pangangailangang bumuo ng mga bagong estratehiya sa trabaho at sa buhay, na magtitiyak na hindi napag-iiwanan ang ating well-being habang tayo ay sumasabay sa agos ng modernisasyon.</p><p>Sa loob ng gawaing ito, tatalakayin natin ang mahahalagang aspeto ng ating kapakanan sa gitna ng teknolohiya:</p>
+                  <ul class="list-disc pl-5 space-y-2"><li><strong>Modernong Interbensyon:</strong> Susuriin natin kung paano naging tulay ang teknolohiya upang mas mapadali ang access sa mental health services, gaya ng online counseling at virtual reality (VR) therapy.</li><li><strong>Impluwensya ng Digital Consumption:</strong> Pag-unawa sa epekto ng screen time at blue light sa kalidad ng ating pahinga at pagtulog.</li><li><strong>Sosyal na Implikasyon:</strong> Pagtalakay sa social media comparison at ang hamon ng information overload na madalas mauwi sa pag-aalinlangan at pag-iisip nang labis.</li><li><strong>Kalinangan sa Trabaho:</strong> Pagkilala sa kahalagahan ng work-life balance at ang pagbuo ng mga polisiya na magpoprotekta sa ating kapakanan laban sa "always-on culture."</li></ul><p>Gabay natin sa makabuluhang diskusyong ito si Sir Jose Mari "Jomar" Hulleza, isang Registered Psychologist at dalubhasa sa workplace mental health advocacy. Layunin natin na pagkatapos ng sesyong ito, kayo ay magkaroon ng mas matibay na kaalaman at mga bagong estratehiya upang mapanatili ang isang malusog at balanseng pamumuhay sa makabagong panahon.</p><p>Handa na ba kayong simulan ang ating paglalakbay tungo sa mas mapayapa at maayos na kaisipan? Muli, welcome sa ating training!</p>
                 </div>
                 <div class="text-center mt-8"><button onclick="unlockAndSwitch('pretest')" class="btn text-lg px-8">Magsimula sa Pre-Test ➔</button></div>
               </div>
@@ -316,8 +322,8 @@
 
                 <div id="step-result" class="hidden">
                     <div class="plan-detail-card">
-                        <h3 class="font-bold text-lg text-[#003d82] mb-4">✅ Ang Iyong Plano: <span id="plan-name"></span></h3>
-                        <ul id="plan-list" class="space-y-3 text-sm text-gray-700 list-disc pl-5"></ul>
+                        <h3 class="font-bold text-lg text-[#003d82] mb-4 text-center border-b pb-3 border-[#003d82]/20">✅ Ang Iyong Plano: <span id="plan-name" class="text-blue-700 underline"></span></h3>
+                        <div id="plan-list" class="mt-4 max-h-[26rem] overflow-y-auto pr-2" style="scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;"></div>
                     </div>
                     <div class="bg-white p-6 rounded-xl shadow border-t-4 border-[#003d82] text-left mt-6">
                         <h3 class="font-bold text-lg mb-4 text-[#003d82]">💭 Repleksyon (Part 2)</h3>
@@ -373,7 +379,7 @@
                                     <h2 style="font-family: 'Montserrat', sans-serif; font-size: 14px; letter-spacing: 3px; color: #64748b; font-weight: 600;">REPUBLIC OF THE PHILIPPINES</h2>
                                     <h1 style="font-family: 'Playfair Display', serif; font-weight: 900; font-size: 32px; color: #003d82;">Department of Transportation</h1>
                                 </div>
-                                <img src="https://www.treasury.gov.ph/wp-content/uploads/2023/10/Logo-Bagong-Pilipinas.png" style="height: 80px;">
+                                <img src="https://images.weserv.nl/?url=www.treasury.gov.ph/wp-content/uploads/2023/10/Logo-Bagong-Pilipinas.png" crossorigin="anonymous" style="height: 80px;">
                             </div>
 
                             <div style="margin-top: -5px;">
@@ -576,7 +582,7 @@
                  document.getElementById('step-calc').classList.add('hidden');
                  document.getElementById('step-select').classList.add('hidden');
                  document.getElementById('plan-name').innerText = currentUser.plan_type;
-                 document.getElementById('plan-list').innerHTML = planDetails[currentUser.plan_type].map(i => `<li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-2"></i>${i}</li>`).join('');
+                 document.getElementById('plan-list').innerHTML = planDetails[currentUser.plan_type].map((i, idx) => `<div class="plan-item-card animate-pop-in" style="animation-delay: ${idx * 0.08}s"><div class="bg-blue-100 text-[#003d82] rounded-full w-7 h-7 flex items-center justify-center flex-shrink-0 mt-[-2px] shadow-sm font-bold text-xs">${idx+1}</div><div class="text-sm text-gray-700 font-medium leading-relaxed">${i}</div></div>`).join('');
                  document.getElementById('step-result').classList.remove('hidden');
             }
         }
@@ -819,16 +825,16 @@
 
     /* PLAN CALCULATOR */
     const planDetails = {
-        'Gradual': ['Magtakda ng daily app limit.', 'Iwasan ang phone sa unang 30 mins ng umaga.', 'I-track ang daily usage.'],
-        'Detox': ['Full weekend unplug.', 'Ipaalam sa pamilya na offline ka.', 'Gumamit ng analog alarm clock.'],
-        'Replacement': ['Maglista ng 10 hobbies.', 'Mag-10 pushups bago mag-scroll.', 'Magbasa ng 1 page kapag bored.'],
-        'Mindful': ['Tanungin ang sarili bago i-unlock.', 'Huminga ng malalim bago mag-click.', 'Linisin ang home screen.']
+        'Gradual': ['Magtakda ng daily app limit sa settings ng telepono.', 'Iwasan ang paggamit ng phone sa unang 30 minuto pagkagising.', 'I-track ang daily screen time usage bago matulog.', 'Bawasan ng 15 minuto ang screen time araw-araw.', 'I-off ang non-essential notifications sa social media apps.', 'Magtalaga ng "tech-free zones" sa bahay (hal. dining table).', 'Huwag magdala ng gadgets sa loob ng banyo.', 'Gumamit ng "grayscale mode" para mabawasan ang pagka-akit sa screen.', 'I-uninstall ang isang distracting app bawat linggo.', 'Mag-set ng alarm bilang paalala na oras na para mag-log off.'],
+        'Detox': ['Magpatupad ng full weekend unplug (walang social media).', 'Ipaalam sa pamilya at kaibigan na ikaw ay mag-o-offline.', 'Gumamit ng analog alarm clock sa halip na cellphone.', 'Mag-iwan ng telepono sa ibang kwarto kapag matutulog na.', 'Maglaan ng isang buong araw na walang internet connection.', 'Subukan ang 24-hour social media fasting.', 'Basahin ang balita sa dyaryo sa halip na sa news feed.', 'Gumamit ng basic phone (keypad) para sa mga importanteng text/tawag.', 'Magplano ng outdoor activity na hindi nangangailangan ng teknolohiya.', 'I-deactivate pansamantala ang mga social media accounts.'],
+        'Replacement': ['Maglista ng 10 offline hobbies na gustong subukan.', 'Mag-10 pushups o stretching bago mag-scroll sa feed.', 'Magbasa ng isang pahina ng libro kapag nakakaramdam ng boredom.', 'Palitan ang panonood ng videos ng pakikinig sa relaxing podcasts.', 'Maglakad-lakad sa labas ng 15 minuto tuwing hapon.', 'Sumubok ng bagong recipe sa halip na mag-order online.', 'Mag-journal o magsulat ng reflections bago matulog.', 'Gumuhit, magpinta, o mag-color kapag stressed.', 'Tumulong sa gawaing bahay imbes na maglaro ng mobile games.', 'Makipagkita sa kaibigan nang personal imbes na mag-chat.'],
+        'Mindful': ['Tanungin ang sarili: "Kailangan ko ba itong buksan ngayon?" bago i-unlock.', 'Huminga ng malalim nang tatlong beses bago mag-click ng app.', 'Linisin at i-organize ang home screen ng iyong telepono.', 'Mag-unfollow ng mga accounts na nagdudulot ng negatibong emosyon.', 'Limitahan ang pagbabasa ng balita sa isang beses kada araw.', 'Mag-set ng intensyon bago gumamit ng internet.', 'I-practice ang "single-tasking" (walang phone habang kumakain).', 'Gumamit ng timer (hal. Pomodoro) kapag nagtatrabaho sa computer.', 'Suriin ang iyong posture at paningin tuwing 20 minuto (20-20-20 rule).', 'Magpasalamat sa isang magandang bagay offline araw-araw.']
     };
     async function selPlan(el, type) {
         document.querySelectorAll('.intervention-card').forEach(c=>c.classList.remove('selected'));
         if(el) el.classList.add('selected');
         document.getElementById('plan-name').innerText = type;
-        document.getElementById('plan-list').innerHTML = planDetails[type].map(i => `<li class="flex items-center"><i class="fas fa-check-circle text-green-500 mr-2"></i>${i}</li>`).join('');
+        document.getElementById('plan-list').innerHTML = planDetails[type].map((i, idx) => `<div class="plan-item-card animate-pop-in" style="animation-delay: ${idx * 0.08}s"><div class="bg-blue-100 text-[#003d82] rounded-full w-7 h-7 flex items-center justify-center flex-shrink-0 mt-[-2px] shadow-sm font-bold text-xs">${idx+1}</div><div class="text-sm text-gray-700 font-medium leading-relaxed">${i}</div></div>`).join('');
         document.getElementById('step-select').classList.add('hidden'); 
         document.getElementById('step-result').classList.remove('hidden');
         if(currentUser && el) {
