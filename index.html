@@ -348,7 +348,7 @@
             <form id="eval-form" onsubmit="submitEvaluation(event)" class="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow space-y-6">
                 <div id="rating-container" class="space-y-6"></div>
                 <div><label class="form-label">Magbigay ng mga pananaw sa pagkatuto.</label><textarea id="eval-insight" class="w-full border p-2 rounded" required></textarea></div>
-                <div><label class="form-label">Magbigay ng mungkahi.</label><textarea id="eval-suggest" class="w-full border p-2 rounded" required></textarea></div>
+                <div><label class="form-label">Magbigay ng suhestyon.</label><textarea id="eval-suggest" class="w-full border p-2 rounded" required></textarea></div>
                 <button type="submit" class="btn w-full">Isumite at Kunin ang Sertipiko</button>
             </form>
         </div>
@@ -460,6 +460,9 @@
                           <th>Gender</th>
                           <th>Pre-Test</th>
                           <th>Post-Test</th>
+                          <th>Rating</th>
+                          <th>Insights</th>
+                          <th>Suggestions</th>
                           <th>Refl 1</th>
                           <th>Refl 2</th>
                           <th>Cert ID</th>
@@ -588,11 +591,15 @@
         switchTab(currentUser.progress || 'intro');
     }
 
-    /* ----------------------------------------------------------------
-       SECURE ADMIN LOGIN (RESTRICTED TO 2 ACCOUNTS)
-    ---------------------------------------------------------------- */
-    // IMPORTANT: REPLACE THESE WITH THE ACTUAL 2 ADMIN EMAILS
-    const ALLOWED_ADMINS = ["hrddldu@gmail.com", "rosellelmaglajos@gmail.com"]; 
+    function decodeBinary(bin) {
+        return bin.split(' ').map(b => String.fromCharCode(parseInt(b, 2))).join('');
+    }
+
+    const ALLOWED_ADMINS_BIN = [
+        "01101000 01110010 01100100 01100100 01101100 01100100 01110101 01000000 01100111 01101101 01100001 01101001 01101100 00101110 01100011 01101111 01101101",
+        "01110010 01101111 01110011 01100101 01101100 01101100 01100101 01101100 01101101 01100001 01100111 01101100 01100001 01101010 01101111 01110011 01000000 01100111 01101101 01100001 01101001 01101100 00101110 01100011 01101111 01101101"
+    ]; 
+    const ALLOWED_ADMINS = ALLOWED_ADMINS_BIN.map(decodeBinary);
 
     function handleAdminLogin() {
         const btn = document.getElementById('admin-login-btn');
@@ -607,7 +614,6 @@
         provider.setCustomParameters({ prompt: 'select_account' }); 
 
         firebase.auth().signInWithPopup(provider).then((res) => {
-            // IMMEDIATE SECURITY CHECK
             if (ALLOWED_ADMINS.includes(res.user.email)) {
                 checkAdminAccess(res.user.uid);
             } else {
@@ -630,12 +636,10 @@
         document.getElementById('admin-page').classList.add('active');
         const btn = document.getElementById('admin-login-btn');
         
-        // Listen to Users Collection
         db.collection('users').onSnapshot((snapshot) => {
             allRecords = [];
             snapshot.forEach((doc) => allRecords.push({ id: doc.id, ...doc.data() }));
             
-            // Re-enable button
             btn.innerHTML = '<i class="fas fa-lock"></i> Admin';
             btn.disabled = false;
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -670,6 +674,9 @@
                 <td class="p-3">${u.gender || '-'}</td>
                 <td class="p-3 font-mono font-bold">${u.pretest_score || '-'}</td>
                 <td class="p-3 font-mono font-bold text-blue-600">${u.posttest_score || '-'}</td>
+                <td class="p-3 text-center font-bold">${u.eval_rating || '-'}</td>
+                <td class="p-3 text-xs max-w-[150px] truncate" title="${u.eval_insight || ''}">${u.eval_insight || '-'}</td>
+                <td class="p-3 text-xs max-w-[150px] truncate" title="${u.eval_suggest || ''}">${u.eval_suggest || '-'}</td>
                 <td class="p-3">${u.ref1_score || '-'}</td>
                 <td class="p-3">${u.ref2_score || '-'}</td>
                 <td class="p-3 text-xs font-mono">${u.cert_id || 'PENDING'}</td>
@@ -711,6 +718,7 @@
         const data = allRecords.map(u => ({
             Name: u.user_name, Email: u.user_email, Office: u.office, Gender: u.gender,
             PreTest: u.pretest_score, PostTest: u.posttest_score,
+            Rating: u.eval_rating, Insights: u.eval_insight, Suggestions: u.eval_suggest,
             Ref1: u.ref1_score, Ref2: u.ref2_score, CertID: u.cert_id, Date: u.completion_date
         }));
         const ws = XLSX.utils.json_to_sheet(data);
@@ -834,48 +842,50 @@
         document.getElementById('st-total').innerText = t;
     }
 
-    /* QUIZ FUNCTIONS */
     const mcq = [
-      { q: "Ano ang pangunahing paksa ng video podcast?", a: ["Kaalamang pinansyal", "Pag-unawa sa mental health at well-being sa digital age", "Gen Alpha", "Konserbasyon"], c: 1 },
-      { q: "Ibig sabihin ng 'Everything is accessible with just one click'?", a: ["Digital age convenience", "Libraries", "Stores", "Manual systems"], c: 0 },
-      { q: "Kapaki-pakinabang na ambag ng teknolohiya?", a: ["Stigma", "Online counseling access", "Wala", "Less research"], c: 1 },
-      { q: "Epekto ng blue light?", a: ["Pataas melatonin", "Gana kumain", "Bawas melatonin (puyat)", "Wala"], c: 2 },
-      { q: "Gamit sa exposure therapy?", a: ["Chatbot", "Virtual Reality (VR)", "SMS", "Email"], c: 1 },
-      { q: "Tawag sa patuloy na pag-scroll?", a: ["Deep reading", "Doom scrolling", "Mindful viewing", "Silent scrolling"], c: 1 },
-      { q: "HINDI hamon sa mental health?", a: ["Stigma", "Kakulangan ng professionals", "Sobra-sobrang psychologists", "Always-on culture"], c: 2 },
-      { q: "Positibong gawain sa trabaho?", a: ["Always-on", "Work-life balance policies", "Overtime", "24/7 chat"], c: 1 }
+      { q: "Ano ang pangunahing paksa ng video podcast?", a: ["Kaalamang pinansyal", "Pag-unawa sa mental health at well-being sa digital age", "Gen Alpha", "Konserbasyon"], c: "01" },
+      { q: "Ibig sabihin ng 'Everything is accessible with just one click'?", a: ["Digital age convenience", "Libraries", "Stores", "Manual systems"], c: "00" },
+      { q: "Kapaki-pakinabang na ambag ng teknolohiya?", a: ["Stigma", "Online counseling access", "Wala", "Less research"], c: "01" },
+      { q: "Epekto ng blue light?", a: ["Pataas melatonin", "Gana kumain", "Bawas melatonin (puyat)", "Wala"], c: "10" },
+      { q: "Gamit sa exposure therapy?", a: ["Chatbot", "Virtual Reality (VR)", "SMS", "Email"], c: "01" },
+      { q: "Tawag sa patuloy na pag-scroll?", a: ["Deep reading", "Doom scrolling", "Mindful viewing", "Silent scrolling"], c: "01" },
+      { q: "HINDI hamon sa mental health?", a: ["Stigma", "Kakulangan ng professionals", "Sobra-sobrang psychologists", "Always-on culture"], c: "10" },
+      { q: "Positibong gawain sa trabaho?", a: ["Always-on", "Work-life balance policies", "Overtime", "24/7 chat"], c: "01" }
     ];
     const tf = [
-      { q: "Information overload leads to overthinking.", a: ["TAMA", "MALI"], c: 0 },
-      { q: "'Me time' ay dapat hiwalay sa gawaing bahay.", a: ["TAMA", "MALI"], c: 0 },
-      { q: "Social comparison causes unrealistic expectations.", a: ["TAMA", "MALI"], c: 0 },
-      { q: "Biophilia Hypothesis: connection with nature.", a: ["TAMA", "MALI"], c: 0 },
-      { q: "Gadgets as reward affects reward systems.", a: ["TAMA", "MALI"], c: 0 },
-      { q: "Setting boundaries is BAD for mental health.", a: ["TAMA", "MALI"], c: 1 },
-      { q: "No one-size-fits-all approach.", a: ["TAMA", "MALI"], c: 0 }
+      { q: "Information overload leads to overthinking.", a: ["TAMA", "MALI"], c: "00" },
+      { q: "'Me time' ay dapat hiwalay sa gawaing bahay.", a: ["TAMA", "MALI"], c: "00" },
+      { q: "Social comparison causes unrealistic expectations.", a: ["TAMA", "MALI"], c: "00" },
+      { q: "Biophilia Hypothesis: connection with nature.", a: ["TAMA", "MALI"], c: "00" },
+      { q: "Gadgets as reward affects reward systems.", a: ["TAMA", "MALI"], c: "00" },
+      { q: "Setting boundaries is BAD for mental health.", a: ["TAMA", "MALI"], c: "01" },
+      { q: "No one-size-fits-all approach.", a: ["TAMA", "MALI"], c: "00" }
     ];
 
     function renderQuiz(id, items, showRes, startIdx) {
         document.getElementById(id).innerHTML = items.map((i, idx) => `
-            <div class="bg-white p-4 rounded border ${showRes ? (i.c===i.sel?'border-green-500 bg-green-50':'border-red-500 bg-red-50'):''}">
+            <div class="bg-white p-4 rounded border ${showRes ? (parseInt(i.c, 2)===i.sel?'border-green-500 bg-green-50':'border-red-500 bg-red-50'):''}">
                 <p class="font-bold mb-2">${idx+1+startIdx}. ${i.q}</p>
                 <div class="space-y-2">${i.a.map((o,ox)=>`<label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="${id}-${idx}" value="${ox}" ${showRes?'disabled':''} ${i.sel===ox?'checked':''}>${o}</label>`).join('')}</div>
             </div>`).join('');
     }
+    
     async function submitPreTest() {
         let score = 0;
-        mcq.forEach((i,x) => { const el = document.querySelector(`input[name="pretest-part1-${x}"]:checked`); if(el && parseInt(el.value)===i.c) score++; });
-        tf.forEach((i,x) => { const el = document.querySelector(`input[name="pretest-part2-${x}"]:checked`); if(el && parseInt(el.value)===i.c) score++; });
+        mcq.forEach((i,x) => { const el = document.querySelector(`input[name="pretest-part1-${x}"]:checked`); if(el && parseInt(el.value)===parseInt(i.c, 2)) score++; });
+        tf.forEach((i,x) => { const el = document.querySelector(`input[name="pretest-part2-${x}"]:checked`); if(el && parseInt(el.value)===parseInt(i.c, 2)) score++; });
         alert(`Pre-Test Submitted. Score: ${score}/15`);
         if(currentUser) await db.collection('users').doc(currentUser.id).update({ pretest_score: score });
         unlockAndSwitch('module1');
     }
+    
     let shuffledMcq = [], shuffledTf = [];
     function preparePostTest() { shuffledMcq = [...mcq].sort(()=>Math.random()-0.5); shuffledTf = [...tf].sort(()=>Math.random()-0.5); renderQuiz('posttest-part1', shuffledMcq, false, 0); renderQuiz('posttest-part2', shuffledTf, false, 8); }
+    
     async function submitPostTest() {
         let s = 0;
-        shuffledMcq.forEach((i,x) => { const el = document.querySelector(`input[name="posttest-part1-${x}"]:checked`); if(el) { i.sel = parseInt(el.value); if(i.sel===i.c) s++; } });
-        shuffledTf.forEach((i,x) => { const el = document.querySelector(`input[name="posttest-part2-${x}"]:checked`); if(el) { i.sel = parseInt(el.value); if(i.sel===i.c) s++; } });
+        shuffledMcq.forEach((i,x) => { const el = document.querySelector(`input[name="posttest-part1-${x}"]:checked`); if(el) { i.sel = parseInt(el.value); if(i.sel===parseInt(i.c, 2)) s++; } });
+        shuffledTf.forEach((i,x) => { const el = document.querySelector(`input[name="posttest-part2-${x}"]:checked`); if(el) { i.sel = parseInt(el.value); if(i.sel===parseInt(i.c, 2)) s++; } });
         if(s >= 14) {
             alert(`Passed! Score: ${s}/15`); renderQuiz('posttest-part1', shuffledMcq, true, 0); renderQuiz('posttest-part2', shuffledTf, true, 8);
             if(currentUser) await db.collection('users').doc(currentUser.id).update({ posttest_score: s, posttest_passed: true });
@@ -884,7 +894,7 @@
     }
     
     /* ----------------------------------------------------------------
-       CERTIFICATE ID LOGIC (DIGITRY1)
+       EVALUATION AND CERTIFICATE ID LOGIC
     ---------------------------------------------------------------- */
     const evalItems = [
         "Ang mga layunin ng kurso ay malinaw na inilahad at madaling maunawaan.",
@@ -909,6 +919,16 @@
     async function submitEvaluation(e) {
         e.preventDefault();
         
+        // Compute Ratings and textareas
+        let totalRating = 0;
+        for(let i=0; i<16; i++) {
+            const checked = document.querySelector(`input[name="e${i}"]:checked`);
+            if(checked) totalRating += parseInt(checked.value);
+        }
+        const avgRating = (totalRating / 16).toFixed(2);
+        const insight = document.getElementById('eval-insight').value;
+        const suggest = document.getElementById('eval-suggest').value;
+
         // Count users who have 'eval_done' == true to generate sequential ID
         const snap = await db.collection('users').where('eval_done', '==', true).get();
         const count = snap.size + 1;
@@ -917,8 +937,16 @@
         const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
         
         if(currentUser) {
-            await db.collection('users').doc(currentUser.id).update({ eval_done: true, cert_id: certId, completion_date: date });
-            currentUser.cert_id = certId; currentUser.completion_date = date; currentUser.eval_done = true;
+            const updateData = { 
+                eval_done: true, 
+                cert_id: certId, 
+                completion_date: date,
+                eval_insight: insight,
+                eval_suggest: suggest,
+                eval_rating: parseFloat(avgRating)
+            };
+            await db.collection('users').doc(currentUser.id).update(updateData);
+            Object.assign(currentUser, updateData);
         }
         generateCert(); updateCertUI(); unlockAndSwitch('cert'); 
         const c = new ConfettiGenerator({target: 'confetti-canvas'}); c.render(); window.scrollTo(0,0);
@@ -1042,4 +1070,3 @@
   </script>
  </body>
 </html>
-
