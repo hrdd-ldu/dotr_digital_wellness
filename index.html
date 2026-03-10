@@ -850,13 +850,13 @@
         
         // 3. Apply the Point System
         let totalScore = 0;
-        if (totalHits >= 5) {
+        if (totalHits >= 6) {
             totalScore = 30;
-        } else if (totalHits === 4) {
+        } else if (totalHits === 5) {
             totalScore = 28;
+        } else if (totalHits === 4) {
+            totalScore = 26;
         } else if (totalHits === 3) {
-            totalScore = 26; // Bridging gap for 4 words
-        } else if (totalHits === 2) {
             totalScore = 25;
         } else {
             totalScore = 20; // Failing score for 2 or fewer words
@@ -1138,3 +1138,4 @@
   </script>
  </body>
 </html>
+
