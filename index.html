@@ -864,7 +864,7 @@
         
         // 4. Submit and UI Updates
         if (totalScore >= 25) {
-             fbBox.innerText = `Score: ${totalScore}/30. Passed! (Keywords found: ${totalHits})`; 
+             fbBox.innerText = `Score: ${totalScore}/30. Passed!`; 
              fbBox.className = "text-sm font-bold text-green-600 mt-2";
              
              if(currentUser) {
@@ -879,7 +879,7 @@
                  if(num === 2) { preparePostTest(); unlockAndSwitch('posttest'); } 
              }, 1500);
         } else {
-             fbBox.innerText = `Score: ${totalScore}/30. Failed. (Found ${totalHits} keywords, need at least 3). Elaborate more.`; 
+             fbBox.innerText = `Score: ${totalScore}/30. Failed. Elaborate more.`; 
              fbBox.className = "text-sm font-bold text-red-600 mt-2"; 
              btn.innerHTML = "Try Again";
         }
@@ -1138,4 +1138,5 @@
   </script>
  </body>
 </html>
+
 
