@@ -10,6 +10,10 @@
   <script src="https://cdn.jsdelivr.net/npm/confetti-js@0.0.18/dist/index.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
@@ -442,9 +446,10 @@
             <h2 class="text-xl font-bold">DOTr Admin Dashboard</h2>
             <span class="text-xs bg-white/20 px-2 py-1 rounded">Digital Well-Being</span>
           </div>
-          <div>
-              <button onclick="exportToExcel()" class="bg-green-600 px-4 py-2 rounded mr-2 hover:bg-green-700 text-sm font-bold"><i class="fas fa-file-excel mr-2"></i>Export</button>
-              <button onclick="document.getElementById('admin-page').classList.remove('active')" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700 text-sm">Close</button>
+          <div class="flex items-center">
+              <button id="btn-download-zip" onclick="downloadAllCertificates()" class="bg-blue-600 px-4 py-2 rounded mr-2 hover:bg-blue-700 text-sm font-bold transition whitespace-nowrap"><i class="fas fa-file-archive mr-2"></i>Zip Certs</button>
+              <button onclick="exportToExcel()" class="bg-green-600 px-4 py-2 rounded mr-2 hover:bg-green-700 text-sm font-bold whitespace-nowrap"><i class="fas fa-file-excel mr-2"></i>Export</button>
+              <button onclick="document.getElementById('admin-page').classList.remove('active')" class="bg-red-600 px-4 py-2 rounded hover:bg-red-700 text-sm whitespace-nowrap">Close</button>
           </div>
       </div>
       
@@ -715,6 +720,87 @@
         await downloadCertPDF(user);
     }
 
+    /* BULK ZIP DOWNLOAD LOGIC */
+    async function downloadAllCertificates() {
+        const completedUsers = allRecords.filter(u => u.eval_done === true);
+        
+        if (completedUsers.length === 0) {
+            alert("Walang nakitang trainee na tapos na sa kurso. (No completed trainees found).");
+            return;
+        }
+
+        const btn = document.getElementById('btn-download-zip');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+        const zip = new JSZip();
+        const element = document.getElementById('certificate-element');
+        const parent = document.getElementById('cert-element-container');
+        
+        // Hide rendering process with an overlay layer to prevent screen jumping
+        const overlay = document.createElement('div');
+        Object.assign(overlay.style, {
+            position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh', 
+            backgroundColor: '#ffffff', zIndex: '99999', display: 'flex', 
+            justifyContent: 'center', alignItems: 'center'
+        });
+        document.body.appendChild(overlay);
+        overlay.appendChild(element);
+
+        try {
+            for (let i = 0; i < completedUsers.length; i++) {
+                const u = completedUsers[i];
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>Zipping (${i + 1}/${completedUsers.length})...`;
+                
+                // Populate UI Data for this specific user
+                generateCert(u);
+                
+                // Give small timeout to allow UI update & QR code to render onto canvas
+                await new Promise(resolve => setTimeout(resolve, 200));
+
+                const certId = u.cert_id || "REF";
+                const traineeName = (u.user_name || "User").replace(/\s+/g, '_');
+                const filename = `${certId}_${traineeName}.pdf`;
+
+                const opt = {
+                    margin: 0,
+                    filename: filename,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, logging: false },
+                    jsPDF: { unit: 'px', format: [1123, 794], orientation: 'landscape' }
+                };
+
+                // Generate Blob natively to avoid saving to browser 
+                const pdfBlob = await html2pdf().set(opt).from(element).toPdf().get('pdf').then(pdf => pdf.output('blob'));
+                
+                // Add to ZIP File System
+                zip.file(filename, pdfBlob);
+            }
+
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>Finalizing ZIP...`;
+            
+            // Build ZIP and trigger download
+            const zipContent = await zip.generateAsync({ type: "blob" });
+            saveAs(zipContent, "DOTr_DigitalWellBeing_Completed_Certificates.zip");
+
+        } catch (error) {
+            console.error("Batch PDF Error:", error);
+            alert("Error generating ZIP file. Please check console.");
+        } finally {
+            // Restore UI state
+            parent.appendChild(element);
+            document.body.removeChild(overlay);
+            
+            // Return to current user's cert view if applicable
+            if (currentUser) { generateCert(currentUser); }
+            
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    }
+
     async function uploadSignedLink(id) {
         const url = prompt("Enter SharePoint/Drive Link:");
         if (url) { await db.collection('users').doc(id).update({ signed_cert_url: url }); alert("Saved!"); }
@@ -798,7 +884,6 @@
         }
     }
 
-// Helper function to count unique keywords in a text
     function countKeywords(text, keywords) {
         const lowerText = text.toLowerCase();
         let hits = 0;
@@ -814,8 +899,6 @@
         const btn = event.target; 
         const fbBox = document.getElementById(`ref${num}-feedback`);
         
-        // 1. Sentence Validation
-        // Splits the text by periods, question marks, or exclamation points to count sentences
         const q1Sentences = q1.split(/[.?!]+/).filter(s => s.trim().length > 0).length;
         const q2Sentences = q2.split(/[.?!]+/).filter(s => s.trim().length > 0).length;
 
@@ -826,7 +909,6 @@
 
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scoring...';
         
-        // 2. Expanded Keywords (English, Tagalog, Taglish)
         const key1 = [
             "notification", "notipikasyon", "schedule", "iskedyul", "oras", 
             "limit", "limita", "hangganan", "kontrol", "bawas", "scrolling", "digital",
@@ -843,12 +925,10 @@
             "toxic", "nakakasama", "negatibo", "inggit", "kumpara", "design", "scroll"
         ];
         
-        // Count hits for both questions and combine them
         const hits1 = countKeywords(q1, key1);
         const hits2 = countKeywords(q2, key2);
         const totalHits = hits1 + hits2;
         
-        // 3. Apply the Point System
         let totalScore = 0;
         if (totalHits >= 6) {
             totalScore = 30;
@@ -859,10 +939,9 @@
         } else if (totalHits === 3) {
             totalScore = 25;
         } else {
-            totalScore = 20; // Failing score for 2 or fewer words
+            totalScore = 20; 
         }
         
-        // 4. Submit and UI Updates
         if (totalScore >= 25) {
              fbBox.innerText = `Score: ${totalScore}/30. Passed!`; 
              fbBox.className = "text-sm font-bold text-green-600 mt-2";
@@ -1140,10 +1219,3 @@
   <script src="offlineRecovery.js"></script>
  </body>
 </html>
-
-
-
-
-
-
-
