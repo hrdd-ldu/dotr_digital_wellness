@@ -399,7 +399,7 @@
                                 <p id="cert-body-text" style="margin-top: 5px; color: #334155; font-size: 16px;">
                                     for their successful participation and completion of
                                 </p>
-                                <h3 style="font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 22px; color: #003d82; margin: 5px 0;">The Influence of Digitalization on Psychological Well-Being</h3>
+                                <h3 id="cert-title" style="font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 22px; color: #003d82; margin: 5px 0;">The Influence of Digitalization on Psychological Well-Being</h3>
                                 <p style="font-size: 14px; color: #64748b; max-width: 80%; margin: 5px auto;">
                                     Given this <span id="cert-date">DATE</span> at The Columbia Tower, Department of Transportation, Ortigas Ave., Brgy. Wack-Wack, Mandaluyong City
                                 </p>
@@ -1117,6 +1117,7 @@
         document.getElementById('cert-actual-date').innerText = date;
         document.getElementById('cert-id').innerText = `ID: ${id}`;
         document.getElementById('cert-body-text').innerText = `for ${pronoun} successful participation and completion of`;
+        document.getElementById('cert-title').innerText = 'The Influence of Digitalization on Psychological Well-Being';
         
         new QRious({
           element: document.getElementById('qrcode-canvas'),
